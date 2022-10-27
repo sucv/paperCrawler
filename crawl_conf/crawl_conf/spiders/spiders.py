@@ -388,7 +388,7 @@ class MmScrapySpider(BaseSpider):
         "https://dl.acm.org/pb/widgets/proceedings/getProceedings?widgetId=517fcc12-7ff3-4236-84f8-899a672b4a79&pbContext=;taxonomy:taxonomy:conference-collections;topic:topic:conference-collections>mm;page:string:Proceedings;wgroup:string:ACM Publication Websites;csubtype:string:Conference;ctype:string:Conference Content;website:website:dl-site;pageGroup:string:Publication Pages&ConceptID=119833",
     ]
     base_url = "https://dl.acm.org"
-    download_delay = 2
+    download_delay = 3
 
     def parse(self, response):
         received_data = json.loads(response.text)

@@ -22,12 +22,14 @@ The crawler scrapes accepted papers from top AI conferences, including:
 
 ### Change Log
 
++ 28-OCT-2022
+  + Added a feature in which the target conferences can be specified in `main.py`. See Example 4 
 + 27-OCT-2022
   + Added the crawler for ACM Multimedia. 
 + 20-OCT-2022
   + Fixed a bug that falsely locates the paper pdf url for NIPS.
 + 7-OCT-2022
-    + Rewrote `main.py` so that the crawler can run over all the conferences! See Example 4.
+    + Rewrote `main.py` so that the crawler can run over all the conferences!
 + 6-OCT-2022
     + Removed the use of `PorterStemmer()` from `nltk` as it involves false negative when querying.
 
@@ -44,11 +46,12 @@ pip install scrapy semanticscholar fuzzywuzzy git+https://github.com/sucv/paperC
 It's a [Scrapy](https://docs.scrapy.org/en/latest/intro/tutorial.html) project. Simply cd to `PaperCrawler/crawlconf/`
 then call the spider. Some examples are provided below.
 
+#### For single conference
+
 ```shell
 scrapy crawl [conference name] -a years=[year1,year2,...,yearn] -a keys=[key1,key2,...,keyn] -a cc=[1 or 0] -o [output_filename.csv] -s JOBDIR=[checkpoint_folder]
 ```
-
-+ `conference name`: cvpr, iccv, eccv, aaai, ijcai, nips, icml, iclr, mm. One conference for one command. Must be lowercase.
++ `conference name`: cvpr, iccv, eccv, aaai, ijcai, nips, icml, iclr, mm. Must be lowercase.
 + `year`: Four-digit numbers, use comma to separate.
 + `keys`: The abstract must contain at least one of the keywords. Use comma to separate.
 + `cc`: Set to 1 to count the citations using SemanticScholar API.
@@ -56,7 +59,12 @@ scrapy crawl [conference name] -a years=[year1,year2,...,yearn] -a keys=[key1,ke
   output filename.
 + `checkpoint_folder`: The folder to store the spider state.
 
-##### Example 1
+##### Example 1: 
+
+```shell
+python main -confs cvpr,iccv,eccv -years 2018,2019,2020,2021,2022 -keys emotion,multimodal,multi-modal -cc 1
+```
+The command would scrape the papers, whose abstracts contain at least one keys, from CVPR, ICCV, and ECCV since 2018.
 
 ```shell
 scrapy crawl iccv -a years=2021,2019,2017 -a keys=video,emotion -o output.csv
@@ -87,11 +95,17 @@ The command above will save the scraping [checkpoint](https://docs.scrapy.org/en
 a folder named `folder1`. If the scraping process is interrupted by `CTRL+C` or other incidents, simply execute the same
 command so that the scraping can continue.
 
+
+#### For multiple conferences:
+
+```shell
+python main.py -confs [conf1,conf2,...,confn] -years [year1,year2,...,yearn] -keys [key1,key2,...,keyn] -cc 1
+```
+
 ##### Example 4
 
 ```shell
-python main.py -keys=video,emotion -cc=0 
+python main -confs cvpr,iccv,eccv -years 2018,2019,2020,2021,2022 -keys emotion,multimodal,multi-modal -cc 1
 ```
+The command would scrape the papers, whose abstracts contain at least one keys, from CVPR, ICCV, and ECCV since 2018. In this case, the scraped data will be saved in `data.csv`, which is defined in `settings.py`. Note, the speed can be greatly increased if specifying `cc` to `0` and excluding `mm` from the `confs`.
 
-The command above scrape crawls from all the conferences and all the years (defined by defaulty in `main.py`) without
-counting the citations. In this case, the scraped data will be saved in `data.csv`, which is defined in `settings.py`.
