@@ -23,7 +23,7 @@ The crawler scrapes accepted papers from top AI conferences, including:
 ### Change Log
 
 + 28-OCT-2022
-  + Added a feature in which the target conferences can be specified in `main.py`. See Example 4 
+  + Added a feature in which the target conferences can be specified in `main.py`. See Example 4. 
 + 27-OCT-2022
   + Added the crawler for ACM Multimedia. 
 + 20-OCT-2022
