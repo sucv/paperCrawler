@@ -107,5 +107,5 @@ python main.py -confs [conf1,conf2,...,confn] -years [year1,year2,...,yearn] -ke
 ```shell
 python main -confs cvpr,iccv,eccv -years 2018,2019,2020,2021,2022 -keys emotion,multimodal,multi-modal -cc 1
 ```
-The command would scrape the papers, whose abstracts contain at least one keys, from CVPR, ICCV, and ECCV since 2018. In this case, the scraped data will be saved in `data.csv`, which is defined in `settings.py`. Note, the speed can be greatly increased if specifying `cc` to `0` and excluding `mm` from the `confs`.
+The command would scrape the papers, whose abstracts contain at least one keys, from CVPR, ICCV, and ECCV since 2018. In this case, the scraped data will be saved in `data.csv`, which is defined in `settings.py`. Note, specify`cc` to `0` and exclud `mm` from the `confs` can greatly speed-up the process.
 
