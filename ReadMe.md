@@ -62,11 +62,6 @@ scrapy crawl [conference name] -a years=[year1,year2,...,yearn] -a keys=[key1,ke
 ##### Example 1: 
 
 ```shell
-python main -confs cvpr,iccv,eccv -years 2018,2019,2020,2021,2022 -keys emotion,multimodal,multi-modal -cc 1
-```
-The command would scrape the papers, whose abstracts contain at least one keys, from CVPR, ICCV, and ECCV since 2018.
-
-```shell
 scrapy crawl iccv -a years=2021,2019,2017 -a keys=video,emotion -o output.csv
 ```
 
