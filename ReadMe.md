@@ -18,7 +18,7 @@ The crawler scrapes accepted papers from top AI conferences, including:
   - `pdf_url` may not work for ICML and ICLR (2022) as the website does not provide the url.
 - ACM MM since 2001.
   - `pdf url` is not available, as the ACM is not open-access.
-  - The download_delay is set to 2s to not being banned.
+  - The `download_delay` is set to 3s to not being banned.
 
 ### Change Log
 
@@ -102,5 +102,5 @@ python main.py -confs [conf1,conf2,...,confn] -years [year1,year2,...,yearn] -ke
 ```shell
 python main -confs cvpr,iccv,eccv -years 2018,2019,2020,2021,2022 -keys emotion,multimodal,multi-modal -cc 1
 ```
-The command would scrape the papers, whose abstracts contain at least one keys, from CVPR, ICCV, and ECCV since 2018. In this case, the scraped data will be saved in `data.csv`, which is defined in `settings.py`. Note, specify`cc` to `0` and exclud `mm` from the `confs` can greatly speed-up the process.
+The command would scrape the papers, whose abstracts contain at least one keys, from CVPR, ICCV, and ECCV since 2018. In this case, the scraped data will be saved in `data.csv`, which is defined in `settings.py`. Note, specify`cc` to `0` and exclude `mm` from the `confs` can greatly speed-up the process.
 
