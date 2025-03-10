@@ -14,12 +14,14 @@ NEWSPIDER_MODULE = 'crawl_conf.spiders'
 
 LOG_LEVEL = "DEBUG"
 
-FEED_EXPORT_FIELDS = ['conf', 'matched_keys', 'title','clean_title', 'citation_count', 'code_url', 'pdf_url', 'authors', 'abstract']
+FEED_EXPORT_FIELDS = ['conf', 'matched_queries', 'title', 'citation_count', 'abstract', 'categories', 'concepts', 'code_url', 'pdf_url', 'authors', 'doi']
 
-FEEDS = {r"data.csv" : {"format" : "csv", "overwrite":False}}
+# FEEDS = {r"data.csv" : {"format" : "csv", "overwrite":False}}
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'crawl_conf (+http://www.yourdomain.com)'
+USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0'
+
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
@@ -69,7 +71,7 @@ ROBOTSTXT_OBEY = False
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-   'crawl_conf.pipelines.CrawlConfPipeline': 300,
+   'crawl_conf.pipelines.CrawlPipeline': 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

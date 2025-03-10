@@ -1,31 +1,177 @@
-## Paper Crawler for Top AI Conferences
+## Table of Contents
 
-This is a Scrapy-based crawler. A tutorial is [at this url](https://www.logx.xyz/scrape-papers-using-scrapy). The scraped information includes:
+- [Paper Crawler for Top CS/AI/ML/NLP Conferences and Journals](#paper-crawler-for-top-csai-mlnlp-conferences-and-journals)
+  - [Supported Conferences](#supported-conferences)
+  - [Supported Journals](#supported-journals)
+  - [Scraped Information](#scraped-information)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Example Commands](#example-commands)
+- [Adding a Custom Spider (Quick & Lazy Solution)](#adding-a-custom-spider-quick--lazy-solution)
+  - [Adding a Journal Spider](#adding-a-journal-spider)
+  - [Adding a Conference Spider](#adding-a-conference-spider)
+  - [Explanation](#explanation)
+- [Supported Arguments](#supported-arguments)
+- [Change Log](#change-log)
+
+## Paper Crawler for Top CS/AI/ML/NLP Conferences and Journals
+
+This is a [Scrapy](https://docs.scrapy.org/en/latest/intro/tutorial.html)-based crawler. The crawler scrapes accepted papers from top conferences and journals, including:
+
+> &ast; Indicates that the abstract is not available since the query is done from DBLP. The official sites of these papers either do not have a consistent HTML structure or block spiders.
+
+### Supported Conferences
+
+| Conference  | Status | Since |
+|-------------|--------|-------|
+| CVPR        | ✅    | 2013  |
+| ECCV        | ✅    | 2018  |
+| ICCV        | ✅    | 2013  |
+| NeurIPS     | ✅    | 1987  |
+| ICLR        | ✅    | 2016  |
+| ICML        | ✅    | 2015  |
+| AAAI*       | ✅    | 1980  |
+| IJCAI       | ✅    | 2017  |
+| ACM MM*     | ✅    | 1993  |
+| KDD         | ✅    | 2015  |
+| WWW*        | ✅    | 1994  |
+| ACL         | ✅    | 2013  |
+| EMNLP       | ✅    | 2013  |
+| NAACL       | ✅    | 2013  |
+| Interspeech | ✅    | 1987  |
+| ICASSP*     | ✅    | 1976  |
+
+### Supported Journals
+
+| Journal | Status | Since |
+|---------|--------|-------|
+| TPAMI*  | ✅    | 1979  |
+| NMI*    | ✅    | 2019  |
+| PNAS*   | ✅    | 1997  |
+| IJCV*   | ✅    | 1987  |
+| IF*     | ✅    | 2014  |
+| TIP*    | ✅    | 1992  |
+| TAFFC*  | ✅    | 2010  |
+| TSP*    | ✅    | 1991  |
+
+### Scraped Information
+
+The following information is extracted from each paper:
 
 ```text
-Conference, matched keywords, title, citation count, code url, pdf url, authors, abstract
+Conference, matched keywords, title, citation count, categories, concepts, code URL, PDF URL, authors, abstract, doi
 ```
 
-The crawler scrapes accepted papers from top AI conferences, including:
+## Installation
 
-- CVPR and ICCV since 2013.
-- ECCV since 2018.
-- AAAI since 1980.
-- IJCAI since 2017.
-- NIPS since 1987.
-- ICML since 2017.
-- ICLR 2018, 2019, 2021, and 2022.
-  - `pdf_url` may not work for ICML and ICLR (2022) as the website does not provide the url.
-- ACM MM since 2001.
-  - `pdf url` is not available, as the ACM is not open-access.
-  - The `download_delay` is set to 3s to not being banned.
+```shell
+pip install scrapy pyparsing git+https://github.com/sucv/paperCrawler.git
+```
 
-### Change Log
+## Usage
 
+First, navigate to the directory where `main.py` is located. During crawling, a CSV file will be generated in the same directory by default unless `-out` is specified.
+
+### Example Commands
+
+#### Get all papers from CVPR, ICCV, and ECCV (2021-2023) without querying and save output to `all.csv`
+```shell
+python main.py -confs cvpr,iccv,eccv -years 2021,2022,2023 -queries "" -out "all.csv"
+```
+
+#### Query papers with titles containing `emotion recognition`, `facial expression`, or `multimodal`
+```shell
+python main.py -confs cvpr,iccv,eccv -years 2021,2022,2023 -queries "(emotion recognition) or (facial expression) or multimodal"
+```
+> **Note:** More examples for queries with AND, OR, (), wildcard can be found [here](https://github.com/pyparsing/pyparsing/blob/master/examples/booleansearchparser.py#L329C18-L329C18).
+
+#### Query papers with more advanced boolean expressions
+```shell
+python main.py -confs cvpr,iccv,eccv -years 2021,2022,2023 -queries "emotion and (visual or audio or speech)" --nocrossref  
+```
+
+> **Note:** Citation count is an important metric for evaluating a paper. Since the `Crossref API` does not have strict rate limits, it is recommended **not** to use `--nocrossref` unless necessary.
+
+## Adding a Custom Spider (Quick & Lazy Solution)
+
+[dblp](https://dblp.org/) provides consistent HTML structures, making it easy to add custom spiders for publishers. You can quickly create a spider for any conference or journal. However, abstracts are unavailable through DBLP. Nonetheless, useful details like citation count, categories, and concepts can still be extracted.
+
+### Adding a Journal Spider
+
+In `spiders.py`, add the following code:
+
+```python
+class TpamiScrapySpider(DblpScrapySpider):
+    name = "tpami"
+
+    start_urls = [
+        "https://dblp.org/db/journals/pami/index.html",
+    ]
+
+    from_dblp = True
+```
+
+### Adding a Conference Spider
+
+```python
+class InterspeechScrapySpider(DblpConfScrapySpider):
+    name = 'icassp'
+
+    start_urls = [
+        "https://dblp.org/db/conf/icassp/index.html",
+    ]
+
+    from_dblp = True
+```
+
+### Explanation
+
+Simply inherit from `DblpScrapySpider` or `DblpConfScrapySpider`, set `name=`, set `from_dblp = True`, and provide `start_urls` pointing to the DBLP homepage of the conference/journal. The rest is handled automatically. Later, you can use the specified `name` to crawl paper information.
+
+## Supported Arguments
+
+- `confs`: A list of supported conferences and journals (must be lowercase, separated by commas).
+- `years`: A list of four-digit years (separated by commas).
+- `queries`: A case-insensitive query string supporting `()`, `and`, `or`, `not`, and wildcard `*`, based on [pyparsing](https://github.com/pyparsing/pyparsing/blob/master/examples/booleansearchparser.py). See examples [here](https://github.com/pyparsing/pyparsing/blob/master/examples/booleansearchparser.py#L329C18-L329C18).
+- `out`: Specifies the output file path.
+- `nocrossref`: Disables fetching citation count, concepts, and categories via CrossRef API.
+
+## Change Log
+
++ 10-3-2025
+  + Fixed the false match bug by thresholding the match score to be >= 90.
++ 7-FEB-2025
+  + Found a bug in which when the paper title cannot be successfully fetched from the top-5 query results, the citation count / categories / concepts from the CrossRef would be false. Haven't figured out how to fix it without importing extra libraries for sophisticated matching. I will leave it for now since it only affect a very small percentage (~0.1%) of the results. 
++ 17-JAN-2025
+  + Add spiders for Interspeech, TSP, and ICASSP.
++ 15-JAN-2025
+  + Add citation count, concepts, categories for a matched paper based on the Crossref API, with 1s cooldown for each request. For unmatched paper, the download cooldown won't be triggered.
+  + Fixed multiple out-of-date crawlers.
+  + Removed some arguments such as `count_citations` and `query_from_abstract`. Now it will call Crossref API for extra information by default, and will always query from title, not abstract.
++ 19-JAN-2024
+  + Fixed an issue in which the years containing single volume and multiple volumes of a journal from dblp cannot be correctly parsed. 
++ 05-JAN-2024
+  + Greatly speeded up journal crawling, as by default only title and authors are captured directly from dblp. Specified `-count_citations` to get `abstract`, `pdf_url`, and `citation_count`.
++ 04-JAN-2024
+  + Added support for ACL, EMNLP, and NAACL.
+  + Added support for top journals, including TPAMI, NMI (Nature Machine Intelligence), PNAS, IJCV, IF, TIP, and TAAFC via dblp and sematic scholar AIP. Example is provided.
+    + You may easily add your own spider in `spiders.py` by inheriting class `DblpScrapySpider` for the conferences and journals as a shortcut. In this way you will only get the paper title and authors. As paper titles can already provide initial information, you may manually search for your interested papers later. 
++ 03-JAN-2024
+  + Added the `-out` argument to specify the output path and filename.
+  + Fixed urls for NIPS2023.
++ 02-JAN-2024
+  + Fixed urls that were not working due to target website updates.
+  + Added support for ICLR, ICML, KDD, and WWW.
+  + Added support for querying with [pyparsing](https://github.com/pyparsing/pyparsing/blob/master/examples/booleansearchparser.py):
+    + 'and', 'or' and implicit 'and' operators;
+    + parentheses;
+    + quoted strings;
+    + wildcards at the end of a search term (help*);
+    + wildcards at the beginning of a search term (*lp);
 + 28-OCT-2022
   + Added a feature in which the target conferences can be specified in `main.py`. See Example 4. 
 + 27-OCT-2022
-  + Added the crawler for ACM Multimedia. 
+  + Added support for ACM Multimedia. 
 + 20-OCT-2022
   + Fixed a bug that falsely locates the paper pdf url for NIPS.
 + 7-OCT-2022
@@ -34,73 +180,4 @@ The crawler scrapes accepted papers from top AI conferences, including:
     + Removed the use of `PorterStemmer()` from `nltk` as it involves false negative when querying.
 
 
-
-### Install
-
-```shell
-pip install scrapy semanticscholar fuzzywuzzy git+https://github.com/sucv/paperCrawler.git
-```
-
-### Usage
-
-It's a [Scrapy](https://docs.scrapy.org/en/latest/intro/tutorial.html) project. Simply cd to `PaperCrawler/crawlconf/`
-then call the spider. Some examples are provided below.
-
-#### For single conference
-
-```shell
-scrapy crawl [conference name] -a years=[year1,year2,...,yearn] -a keys=[key1,key2,...,keyn] -a cc=[1 or 0] -o [output_filename.csv] -s JOBDIR=[checkpoint_folder]
-```
-+ `conference name`: cvpr, iccv, eccv, aaai, ijcai, nips, icml, iclr, mm. Must be lowercase.
-+ `year`: Four-digit numbers, use comma to separate.
-+ `keys`: The abstract must contain at least one of the keywords. Use comma to separate.
-+ `cc`: Set to 1 to count the citations using SemanticScholar API.
-+ `output_filename`: The output csv filename. The outputs will attach to previous file if two commands share the same
-  output filename.
-+ `checkpoint_folder`: The folder to store the spider state.
-
-##### Example 1: 
-
-```shell
-scrapy crawl iccv -a years=2021,2019,2017 -a keys=video,emotion -o output.csv
-```
-
-The command above can scrape the information of all papers from ICCV2017, ICCV2019, ICCV2021, with "video" OR "emotion"
-appeared in the abstracts. The results will be saved in `output.csv`. It won't count the citations and save the
-checkpoint. It scrapes really fast.
-
-##### Example 2
-
-```shell
-scrapy crawl nips -a years=2020,2021,2022 -a keys=video,emotion -a cc=1 -o output.csv 
-```
-
-The command above works in the same manner, it also scrapes the number of citation for each paper. Note that the latter
-is done using the free [SemanticScholar API](https://www.semanticscholar.org/product/api). Currently, I use the paper
-title to query. Note that the API has a maximum request limit per second. Use this command with cautious, because it
-could be dramatically time-consuming. (Or skip the citation count and post-process the `output.csv` on your own.)
-
-##### Example 3
-
-```shell
-scrapy crawl ijcai  -a years=2021,2020 -a keys=video -a cc=1 -o output.csv -s JOBDIR=folder1
-```
-
-The command above will save the scraping [checkpoint](https://docs.scrapy.org/en/latest/topics/jobs.html#topics-jobs) in
-a folder named `folder1`. If the scraping process is interrupted by `CTRL+C` or other incidents, simply execute the same
-command so that the scraping can continue.
-
-
-#### For multiple conferences:
-
-```shell
-python main.py -confs [conf1,conf2,...,confn] -years [year1,year2,...,yearn] -keys [key1,key2,...,keyn] -cc 1
-```
-
-##### Example 4
-
-```shell
-python main -confs cvpr,iccv,eccv -years 2018,2019,2020,2021,2022 -keys emotion,multimodal,multi-modal -cc 1
-```
-The command would scrape the papers, whose abstracts contain at least one keys, from CVPR, ICCV, and ECCV since 2018. In this case, the scraped data will be saved in `data.csv`, which is defined in `settings.py`. Note, specify`cc` to `0` and exclude `mm` from the `confs` can greatly speed-up the process.
 
