@@ -18,6 +18,8 @@ class BaseSpider(scrapy.Spider):
         years = kwargs.get('years').split(',')
         queries = kwargs.get('queries')
         nocrossref = kwargs.get('nocrossref')
+        self.download_pdf = kwargs.get('download_pdf')
+        self.pdf_dir = kwargs.get('pdf_dir')
 
         # Remove repeated input
         wanted_conf = []
@@ -67,8 +69,6 @@ class CvprScrapySpider(BaseSpider):
     start_urls = [
         "https://openaccess.thecvf.com/menu",
     ]
-
-    from_dblp = False
 
     def parse(self, response):
         # response contains all the data scraped from the start_url, including the html source code.
@@ -142,16 +142,12 @@ class IccvScrapySpider(CvprScrapySpider):
         "https://openaccess.thecvf.com/menu",
     ]
 
-    from_dblp = False
-
 class EccvScrapySpider(CvprScrapySpider):
     name = 'eccv'
     start_urls = [
         "https://www.ecva.net/papers.php",
     ]
     base_url = "https://www.ecva.net"
-
-    from_dblp = False
 
     def parse(self, response):
 
@@ -170,8 +166,6 @@ class NipsScrapySpider(BaseSpider):
     start_urls = [
         "https://papers.nips.cc/",
     ]
-
-    from_dblp = False
 
     def parse(self, response):
 
@@ -246,8 +240,6 @@ class NipsScrapySpider(BaseSpider):
 #         "https://aaai.org/aaai-publications/aaai-conference-proceedings/",
 #     ]
 #
-#     from_dblp = False
-#
 #     def parse(self, response):
 #
 #         for conf in self.wanted_conf:
@@ -285,9 +277,6 @@ class IjcaiScrapySpider(BaseSpider):
     start_urls = [
         "https://www.ijcai.org/all_proceedings",
     ]
-
-    from_dblp = False
-
     def parse(self, response):
         for conf in self.wanted_conf:
             meta = {"conf": conf}
@@ -322,8 +311,6 @@ class InterspeechScrapySpider(BaseSpider):
 
     base_url = "https://www.isca-archive.org/"
 
-    from_dblp = False
-
     def parse(self, response):
         for conf in self.wanted_conf:
             meta = {"conf": conf}
@@ -357,7 +344,6 @@ class IclrScrapySpider(BaseSpider):
         "https://openreview.net/group?id=ICLR.cc&referrer=%5BHomepage%5D(%2F)",
     ]
 
-    from_dblp = False
 
     def parse(self, response):
 
@@ -475,8 +461,6 @@ class IcmlScrapySpider(BaseSpider):
         "https://icml.cc/Downloads",
     ]
 
-    from_dblp = False
-
     def parse(self, response):
         for conf in self.wanted_conf:
             meta = {"conf": conf}
@@ -517,8 +501,6 @@ class MmScrapySpider(BaseSpider):
         "https://dl.acm.org/conference/mm/proceedings",
     ]
     base_url = "https://dl.acm.org"
-
-    from_dblp = False
 
     def parse(self, response):
         proceeding_urls = response.xpath("//ul[@class='conference__proceedings__container']/li/div[@class='conference__title left-bordered-title']/a/@href").extract()
@@ -586,8 +568,6 @@ class KddScrapySpider(MmScrapySpider):
     ]
     base_url = "https://dl.acm.org"
 
-    from_dblp = False
-
     def parse(self, response):
         proceeding_urls = response.xpath("//ul[@class='conference__proceedings__container']/li[@class='conference__proceedings']/div[@class='conference__title left-bordered-title']/a/@href").extract()
         proceeding_titles = response.xpath("//ul[@class='conference__proceedings__container']/li[@class='conference__proceedings']/div[@class='conference__title left-bordered-title']/a/text()").extract()
@@ -619,8 +599,6 @@ class WwwScrapySpider(MmScrapySpider):
         "https://dl.acm.org/conference/www/proceedings",
     ]
     base_url = "https://dl.acm.org"
-
-    from_dblp = False
 
     def parse(self, response):
 
@@ -654,8 +632,6 @@ class AclScrapySpider(BaseSpider):
         "https://aclanthology.org/venues/acl/",
     ]
     base_url = "https://aclanthology.org"
-
-    from_dblp = False
 
     def parse(self, response):
         conf_urls = response.xpath("//div[@id='main-container']//div[contains(@class, 'col-sm')]//ul/li[1]/a[@class='align-middle']/@href").extract()
@@ -697,8 +673,6 @@ class EmnlpScrapySpider(AclScrapySpider):
 
     base_url = "https://aclanthology.org"
 
-    from_dblp = False
-
 class NaaclScrapySpider(AclScrapySpider):
     name = "naacl"
 
@@ -707,8 +681,6 @@ class NaaclScrapySpider(AclScrapySpider):
     ]
 
     base_url = "https://aclanthology.org"
-
-    from_dblp = False
 
 class DblpScrapySpider(BaseSpider):
 
@@ -778,8 +750,6 @@ class MultimediaScrapySpider(DblpConfScrapySpider):
         "https://dblp.org/db/conf/mm/index.html",
     ]
 
-    from_dblp = True
-
 
 class WwwScrapySpider(DblpConfScrapySpider):
     name = 'www'
@@ -788,15 +758,11 @@ class WwwScrapySpider(DblpConfScrapySpider):
         "https://dblp.org/db/conf/www/index.html",
     ]
 
-    from_dblp = True
-
 class AaaiScrapySpider(DblpConfScrapySpider):
     name = 'aaai'
     start_urls = [
         "https://dblp.org/db/conf/aaai/index.html",
     ]
-
-    from_dblp = True
 
 
 class IcasspScrapySpider(DblpConfScrapySpider):
@@ -806,15 +772,12 @@ class IcasspScrapySpider(DblpConfScrapySpider):
         "https://dblp.org/db/conf/icassp/index.html",
     ]
 
-    from_dblp = True
 class TpamiScrapySpider(DblpScrapySpider):
     name = "tpami"
 
     start_urls = [
         "https://dblp.org/db/journals/pami/index.html",
     ]
-
-    from_dblp = True
 
 class NmiScrapySpider(DblpScrapySpider):
     name = "nmi"
@@ -823,16 +786,12 @@ class NmiScrapySpider(DblpScrapySpider):
         "https://dblp.org/db/journals/natmi/index.html",
     ]
 
-    from_dblp = True
-
 class PnasScrapySpider(DblpScrapySpider):
     name = "pnas"
 
     start_urls = [
         "https://dblp.org/db/journals/pnas/index.html",
     ]
-
-    from_dblp = True
 
 class IjcvScrapySpider(DblpScrapySpider):
     name = "ijcv"
@@ -841,16 +800,12 @@ class IjcvScrapySpider(DblpScrapySpider):
         "https://dblp.org/db/journals/ijcv/index.html",
     ]
 
-    from_dblp = True
-
 class TaffcScrapySpider(DblpScrapySpider):
     name = "taffc"
 
     start_urls = [
         "https://dblp.org/db/journals/taffco/index.html",
     ]
-
-    from_dblp = True
 
 class TipScrapySpider(DblpScrapySpider):
     name = "tip"
@@ -859,16 +814,12 @@ class TipScrapySpider(DblpScrapySpider):
         "https://dblp.org/db/journals/tip/index.html",
     ]
 
-    from_dblp = True
-
 class IfScrapySpider(DblpScrapySpider):
     name = "if"
 
     start_urls = [
         "https://dblp.org/db/journals/inffus/index.html",
     ]
-
-    from_dblp = True
 
 
 class TspScrapySpider(DblpScrapySpider):
@@ -877,7 +828,5 @@ class TspScrapySpider(DblpScrapySpider):
     start_urls = [
         "https://dblp.org/db/journals/tsp/index.html",
     ]
-
-    from_dblp = True
 
 

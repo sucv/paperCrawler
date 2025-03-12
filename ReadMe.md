@@ -18,7 +18,7 @@
 
 This is a [Scrapy](https://docs.scrapy.org/en/latest/intro/tutorial.html)-based crawler. The crawler scrapes accepted papers from top conferences and journals, including:
 
-> &ast; Indicates that the abstract is not available since the query is done from DBLP. The official sites of these papers either do not have a consistent HTML structure or block spiders.
+> &ast; The official sites of these publishers either do not have a consistent HTML structure or block spiders. The spider will attempt to query the title from CrossRef, the abstract could be fetched once the corresponding paper is open-accessed and being hosted on Arxiv. 
 
 ### Supported Conferences
 
@@ -27,7 +27,7 @@ This is a [Scrapy](https://docs.scrapy.org/en/latest/intro/tutorial.html)-based 
 | CVPR        | ✅    | 2013  |
 | ECCV        | ✅    | 2018  |
 | ICCV        | ✅    | 2013  |
-| NeurIPS     | ✅    | 1987  |
+| NIPS        | ✅    | 1987  |
 | ICLR        | ✅    | 2016  |
 | ICML        | ✅    | 2015  |
 | AAAI*       | ✅    | 1980  |
@@ -39,7 +39,7 @@ This is a [Scrapy](https://docs.scrapy.org/en/latest/intro/tutorial.html)-based 
 | EMNLP       | ✅    | 2013  |
 | NAACL       | ✅    | 2013  |
 | Interspeech | ✅    | 1987  |
-| ICASSP*     | ✅    | 1976  |
+| ICASSP      | ✅    | 1976  |
 
 ### Supported Journals
 
@@ -74,12 +74,12 @@ First, navigate to the directory where `main.py` is located. During crawling, a 
 
 ### Example Commands
 
-#### Get all papers from CVPR, ICCV, and ECCV (2021-2023) without querying and save output to `all.csv`
+#### Get all papers from CVPR, ICCV, and ECCV (2021-2023) and save output to `myresearch/all.csv`, also download papers whose citation count is no smaller than 50
 ```shell
-python main.py -confs cvpr,iccv,eccv -years 2021,2022,2023 -queries "" -out "all.csv"
+python main.py -confs cvpr,iccv,eccv -years 2021,2022,2023 -queries "" -out "myresearch/all.csv" -download_pdf 50
 ```
 
-#### Query papers with titles containing `emotion recognition`, `facial expression`, or `multimodal`
+#### Query papers with titles containing `emotion recognition`, `facial expression`, or `multimodal` without downloading paper
 ```shell
 python main.py -confs cvpr,iccv,eccv -years 2021,2022,2023 -queries "(emotion recognition) or (facial expression) or multimodal"
 ```
@@ -87,10 +87,13 @@ python main.py -confs cvpr,iccv,eccv -years 2021,2022,2023 -queries "(emotion re
 
 #### Query papers with more advanced boolean expressions
 ```shell
-python main.py -confs cvpr,iccv,eccv -years 2021,2022,2023 -queries "emotion and (visual or audio or speech)" --nocrossref  
+python main.py -confs cvpr,iccv,eccv -years 2021,2022,2023 -queries "emo* and (visual or audio or speech)" 
 ```
 
-> **Note:** Citation count is an important metric for evaluating a paper. Since the `Crossref API` does not have strict rate limits, it is recommended **not** to use `--nocrossref` unless necessary.
+#### Query papers from all the sources for Year 2021-2023 whose citation count is no smaller than 50
+```shell
+python main.py -years 2021,2022,2023 -queries "emo* and (visual or audio or speech)" -download_pdf 50
+```
 
 ## Adding a Custom Spider (Quick & Lazy Solution)
 
@@ -107,8 +110,6 @@ class TpamiScrapySpider(DblpScrapySpider):
     start_urls = [
         "https://dblp.org/db/journals/pami/index.html",
     ]
-
-    from_dblp = True
 ```
 
 ### Adding a Conference Spider
@@ -120,26 +121,31 @@ class InterspeechScrapySpider(DblpConfScrapySpider):
     start_urls = [
         "https://dblp.org/db/conf/icassp/index.html",
     ]
-
-    from_dblp = True
 ```
 
 ### Explanation
 
-Simply inherit from `DblpScrapySpider` or `DblpConfScrapySpider`, set `name=`, set `from_dblp = True`, and provide `start_urls` pointing to the DBLP homepage of the conference/journal. The rest is handled automatically. Later, you can use the specified `name` to crawl paper information.
+Simply inherit from `DblpScrapySpider` or `DblpConfScrapySpider`, set `name=`, and provide `start_urls` pointing to the DBLP homepage of the conference/journal. The rest is handled automatically. Later, you can use the specified `name` to crawl paper information.
 
 ## Supported Arguments
 
-- `confs`: A list of supported conferences and journals (must be lowercase, separated by commas).
-- `years`: A list of four-digit years (separated by commas).
+- `confs`: A list of supported conferences and journals (must be lowercase, separated by commas), which was defined as `name` in each spider. If not specified, all the available publishers will be queried.
+  - Available publisher names so far: `cvpr,iccv,eccv,aaai,ijcai,nips,iclr,icml,mm,kdd,www,acl,emnlp,naacl,tpami,nmi,pnas,ijcv,if,tip,taffc,interspeech,icassp,tsp`. Feel free to add more based on the instruction above.
+- `years`: A list of four-digit years (separated by commas). If not specified, will query for recent 10 years (since 2016).
 - `queries`: A case-insensitive query string supporting `()`, `and`, `or`, `not`, and wildcard `*`, based on [pyparsing](https://github.com/pyparsing/pyparsing/blob/master/examples/booleansearchparser.py). See examples [here](https://github.com/pyparsing/pyparsing/blob/master/examples/booleansearchparser.py#L329C18-L329C18).
-- `out`: Specifies the output file path.
-- `nocrossref`: Disables fetching citation count, concepts, and categories via CrossRef API.
+- `out`: Specifies the output csv path. `.csv` will be appended if it does not end with ".csv". The pdfs, if to be downloaded, will be saved in the same directory.
+- `download_pdf`: The citation count threshold to decide whether to download a paper. Must be an integer. By default, the value is `-1` which would download nothing.  
 
 ## Change Log
 
-+ 10-3-2025
-  + Fixed the false match bug by thresholding the match score to be >= 90.
++ 12-MAR-2024
+  + Improved the `pipeline.py`so that when CrossRef API says the paper is open-accessed, it will not only accumulate all the OA pdf url, but also examine whether the url is from Arxiv. If so, it will further request the abstract from Arxiv API. Since there is a great number of paper being open-accessed, doing so may largely salvage the records from DBLP that do not come with such information.
+  + Added `download_pdf`as the citation count threshold for downloading a paper. Only if a paper's citation count is greater than or eqal to the threshold, would the paper be downloaded.
+  + Removed `--nocrossref` so that the CrossRef API is always called. Doing so can fetch useful information such as citation count, concepts, etc.
+  + Removed `from_dblp` for each spider class. Now it doesn't matter whether the record is from dblp or the original publisher, they all follow the same processing logic.
+  + Fixed the `code_url`. If it ends with a period `.`, the latter will be removed.
++ 10-MAR-2025
+  + Fixed the last false match bug by thresholding the match score. 
 + 7-FEB-2025
   + Found a bug in which when the paper title cannot be successfully fetched from the top-5 query results, the citation count / categories / concepts from the CrossRef would be false. Haven't figured out how to fix it without importing extra libraries for sophisticated matching. I will leave it for now since it only affect a very small percentage (~0.1%) of the results. 
 + 17-JAN-2025
@@ -178,6 +184,3 @@ Simply inherit from `DblpScrapySpider` or `DblpConfScrapySpider`, set `name=`, s
     + Rewrote `main.py` so that the crawler can run over all the conferences!
 + 6-OCT-2022
     + Removed the use of `PorterStemmer()` from `nltk` as it involves false negative when querying.
-
-
-

@@ -1,12 +1,11 @@
-import time
-import threading
+import os
 import re
-import requests
 
-from itemadapter import ItemAdapter
-from scrapy.exceptions import DropItem
+import feedparser
+import requests
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
+from scrapy.exceptions import DropItem
 
 OPENALEX_URL = "https://api.openalex.org/works"
 
@@ -208,80 +207,134 @@ class BooleanSearchParser:
 import time
 import threading
 
+
 class CrawlPipeline:
-    # These three attributes are newly added for rate-limiting:
+    # Rate-limiting attributes:
     rate_limit_lock = threading.Lock()
     last_request_time = 0
     COOLDOWN_SECONDS = 1  # Wait 1s between external requests
 
     def process_item(self, item, spider):
-        parser = BooleanSearchParser()
-        abstract = item["abstract"]
-        title = item["title"]
-
+        parser = BooleanSearchParser()  # Assuming this is defined elsewhere
+        abstract = item.get("abstract", "")
+        title = item.get("title", "")
         clean_title = re.sub(r'\W+', ' ', title).lower()
-        text_body = clean_title
 
-        # parse queries
+        # Parse queries
         if spider.queries == "":
             found = True
             matched_tokens = set()
         else:
-            found, matched_tokens = parser.match_with_tokens(
-                text=text_body, expr=spider.queries
-            )
+            found, matched_tokens = parser.match_with_tokens(text=clean_title, expr=spider.queries)
 
-        if found:
-            if not spider.from_dblp and abstract is not None:
-                item["code_url"] = re.findall(r'(https?://\S+)', abstract)
-
-            citation_count = -1
-            paper_doi = ""
-            paper_categories = ""
-            paper_concepts = ""
-
-            # Only call external API if the spider says so
-            if spider.crossref:
-                params = {"search": clean_title}
-
-                # --- NEW: This block is now rate-limited ---
-                with self.rate_limit_lock:
-                    now = time.time()
-                    elapsed = now - self.last_request_time
-                    if elapsed < self.COOLDOWN_SECONDS:
-                        time.sleep(self.COOLDOWN_SECONDS - elapsed)
-
-                    response = requests.get(OPENALEX_URL, params=params)
-                    self.last_request_time = time.time()
-                # --- END of rate-limited block ---
-
-                if response.status_code == 200:
-                    data = response.json()
-                    if data["results"]:
-                        # Extract the top 10 papers
-                        top_papers = data["results"][:10]
-
-                        # Get the titles from the top 10 papers
-                        found_titles = [paper["title"] for paper in top_papers]
-
-                        # Find the most relevant title using fuzzy matching
-                        best_match, best_score = process.extractOne(title, found_titles, scorer=fuzz.ratio)
-
-                        if best_score >= 90:
-                            # Find the corresponding paper
-                            best_paper = next(paper for paper in top_papers if paper["title"] == best_match)
-
-                            # best_paper = data["results"][0]
-                            citation_count = best_paper["cited_by_count"]
-                            paper_categories = ",".join([best_paper["topics"][i]['display_name'] for i in range(len(best_paper["topics"]))])
-                            paper_concepts = ",".join([best_paper["concepts"][i]['display_name'] for i in range(len(best_paper["concepts"]))])
-                            paper_doi = best_paper["doi"]
-
-            item["citation_count"] = citation_count
-            item["matched_queries"] = ",".join(list(matched_tokens))
-            item["categories"] = paper_categories
-            item["concepts"] = paper_concepts
-            item["doi"] = paper_doi
-            return item
-        else:
+        if not found:
             raise DropItem("Missing keyword in %s" % item)
+
+        # Initialize variables for storing results
+        oa_urls = []
+        citation_count = -1
+        paper_doi = ""
+        paper_categories = ""
+        paper_concepts = ""
+
+        # Only call external API if the spider indicates so
+        if spider.crossref:
+            params = {"search": clean_title}
+
+            # --- Rate-limited API request ---
+            with self.rate_limit_lock:
+                now = time.time()
+                elapsed = now - self.last_request_time
+                if elapsed < self.COOLDOWN_SECONDS:
+                    time.sleep(self.COOLDOWN_SECONDS - elapsed)
+                response = requests.get(OPENALEX_URL, params=params)
+                self.last_request_time = time.time()
+            # --- End rate-limited block ---
+
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("results"):
+                    # Use top 5 papers (as per your current slice)
+                    top_papers = {i: paper for i, paper in enumerate(data["results"][:5])}
+                    # Map each index to its title for fuzzy matching
+                    titles_dict = {idx: paper["title"] for idx, paper in top_papers.items()}
+
+                    # Perform fuzzy matching; each tuple is (index, score, title)
+                    matches = process.extract(title, titles_dict, scorer=fuzz.ratio)
+                    relevant_matches = [match for match in matches if match[1] >= 90]
+
+                    if relevant_matches:
+                        highest_cited = -1
+
+                        # Traverse through the relevant matches
+                        for matched_title, score, idx in relevant_matches:
+                            # Use the index (idx) to retrieve the paper from top_papers
+                            paper = top_papers[idx]
+
+                            # If the paper is open access and has an OA URL, process it
+                            if paper.get("open_access", {}).get("is_oa", False):
+                                oa_url = paper.get("open_access", {}).get("oa_url")
+                                if oa_url:
+                                    if "arxiv.org/abs/" in oa_url:
+                                        # Convert the arXiv abstract URL to a PDF URL
+                                        oa_url = oa_url.replace("abs", "pdf")
+                                        arxiv_id = oa_url.split("/")[-1]
+                                        api_url = f"http://export.arxiv.org/api/query?id_list={arxiv_id}"
+                                        # If no abstract is present, try retrieving it from arXiv
+                                        if abstract == "":
+                                            feed = feedparser.parse(api_url)
+                                            if feed.entries:
+                                                abstract = re.sub(r'\W+', ' ', feed.entries[0].summary)
+                                    oa_urls.append(oa_url)
+
+                            # Track the highest cited_by_count among the matched papers
+                            if paper.get("cited_by_count", 0) > highest_cited:
+                                highest_cited = paper["cited_by_count"]
+
+                        citation_count = highest_cited
+
+                        # Get doi, categories, and concepts from the first relevant match
+                        first_match_idx = relevant_matches[0][2]
+                        first_paper = top_papers[first_match_idx]
+                        paper_doi = first_paper.get("doi", "")
+                        paper_categories = ",".join(
+                            topic['display_name'] for topic in first_paper.get("topics", [])
+                        )
+                        paper_concepts = ",".join(
+                            concept['display_name'] for concept in first_paper.get("concepts", [])
+                        )
+
+                        # Set pdf_url if not already set
+                        oa_urls_str = ",".join(oa_urls)
+                        if not item.get('pdf_url'):
+                            item['pdf_url'] = oa_urls_str
+
+        # Update the item with the retrieved metadata
+        item["citation_count"] = citation_count
+        item["matched_queries"] = ",".join(list(matched_tokens))
+        item["categories"] = paper_categories
+        item["concepts"] = paper_concepts
+        item["doi"] = paper_doi
+        item["abstract"] = abstract
+
+        # Extract a code URL from the abstract if present
+        if abstract:
+            code_url_matches = re.findall(r'(https?://\S+)', abstract)
+            code_url = code_url_matches[0].rstrip(".") if code_url_matches else ""
+            item["code_url"] = code_url
+
+        if spider.download_pdf > -1 and item.get('pdf_url') and item.get('citation_count') >= spider.download_pdf:
+            pdf_urls = item.get("pdf_url").split(",")
+            is_downloaded = False
+            for pdf_url in pdf_urls:
+
+                if is_downloaded:
+                    continue
+
+                response = requests.get(pdf_url)
+                if response.status_code == 200:
+                    pdf_path = os.path.join(spider.pdf_dir, "_".join(clean_title.strip().split(" ")) + ".pdf")
+                    with open(pdf_path, "wb") as file:
+                        file.write(response.content)
+
+        return item
