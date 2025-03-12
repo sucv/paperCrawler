@@ -97,7 +97,7 @@ python main.py -years 2021,2022,2023 -queries "emo* and (visual or audio or spee
 
 ## Adding a Custom Spider (Quick & Lazy Solution)
 
-[dblp](https://dblp.org/) provides consistent HTML structures, making it easy to add custom spiders for publishers. You can quickly create a spider for any conference or journal. However, abstracts are unavailable through DBLP. Nonetheless, useful details like citation count, categories, and concepts can still be extracted.
+[dblp](https://dblp.org/) provides consistent HTML structures, making it easy to add custom spiders for publishers. You can quickly create a spider for any conference or journal. DBLP provides useful information such as citation count and paper categories. Though the abstract is not available from DBLP, the spider will try to salvage by investigating whether the paper is available on Arxiv and fetch the abstract if available.
 
 ### Adding a Journal Spider
 
