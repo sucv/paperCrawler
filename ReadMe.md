@@ -65,7 +65,7 @@ Conference, matched keywords, title, citation count, categories, concepts, code 
 ## Installation
 
 ```shell
-pip install scrapy pyparsing git+https://github.com/sucv/paperCrawler.git
+pip install scrapy pyparsing feedparser fuzzywuzzy git+https://github.com/sucv/paperCrawler.git
 ```
 
 ## Usage
