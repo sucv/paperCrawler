@@ -2,3 +2,5 @@ __pycache__/
 .idea/
 .git/
 *.pth
+*.pdf
+/downloads
