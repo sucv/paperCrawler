@@ -334,6 +334,7 @@ class CrawlPipeline:
                 response = requests.get(pdf_url)
                 if response.status_code == 200:
                     pdf_path = os.path.join(spider.pdf_dir, "_".join(clean_title.strip().split(" ")) + ".pdf")
+                    os.makedirs(spider.pdf_dir, exist_ok=True)
                     with open(pdf_path, "wb") as file:
                         file.write(response.content)
 
