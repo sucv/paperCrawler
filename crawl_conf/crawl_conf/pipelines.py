@@ -294,7 +294,7 @@ class CrawlPipeline:
                                         if abstract == "":
                                             feed = feedparser.parse(api_url)
                                             if feed.entries:
-                                                abstract = re.sub(r'\W+', ' ', feed.entries[0].summary)
+                                                abstract = feed.entries[0].summary.replace("\n", "")
                                     oa_urls.append(oa_url)
 
                             # Track the highest cited_by_count among the matched papers
