@@ -1,6 +1,6 @@
 import os
 import re
-
+from urllib.parse import urlparse
 import feedparser
 import requests
 from fuzzywuzzy import fuzz
@@ -8,6 +8,16 @@ from fuzzywuzzy import process
 from scrapy.exceptions import DropItem
 
 OPENALEX_URL = "https://api.openalex.org/works"
+
+def deduplicate_urls(urls):
+    unique = {}
+    for url in urls:
+        parsed = urlparse(url)
+        key = parsed.netloc + parsed.path
+        # Replace a http URL if a duplicate https exists.
+        if key not in unique or (url.startswith("https") and unique[key].startswith("http")):
+            unique[key] = url
+    return list(unique.values())
 
 # ------------- BooleanSearchParser code (unchanged) -------------
 from pyparsing import (
@@ -305,7 +315,8 @@ class CrawlPipeline:
                         )
 
                         # Set pdf_url if not already set
-                        oa_urls_str = ",".join(oa_urls)
+                        oa_urls_str = ",".join(deduplicate_urls(oa_urls))
+
                         if not item.get('pdf_url'):
                             item['pdf_url'] = oa_urls_str
 

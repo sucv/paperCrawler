@@ -140,6 +140,7 @@ Simply inherit from `DblpScrapySpider` or `DblpConfScrapySpider`, set `name=`, a
 
 + 13-MAR-2024
   + Fixed a bug so that the pdfs can be downloaded to `pdf_dir`.
+  + Fixed a bug in which duplicated pdf urls could be saved.
 + 12-MAR-2024
   + Improved the `pipeline.py`so that when CrossRef API says the paper is open-accessed, it will not only accumulate all the OA pdf url, but also examine whether the url is from Arxiv. If so, it will further request the abstract from Arxiv API. Since there is a great number of paper being open-accessed, doing so may largely salvage the records from DBLP that do not come with such information.
   + Added `download_pdf`as the citation count threshold for downloading a paper. Only if a paper's citation count is greater than or eqal to the threshold, would the paper be downloaded.
