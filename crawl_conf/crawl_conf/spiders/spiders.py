@@ -494,126 +494,7 @@ class IcmlScrapySpider(BaseSpider):
         return title, pdf_url, authors, abstract
 
 
-class MmScrapySpider(BaseSpider):
-    name = 'mm'
 
-    start_urls = [
-        "https://dl.acm.org/conference/mm/proceedings",
-    ]
-    base_url = "https://dl.acm.org"
-
-    def parse(self, response):
-        proceeding_urls = response.xpath("//ul[@class='conference__proceedings__container']/li/div[@class='conference__title left-bordered-title']/a/@href").extract()
-        proceeding_titles = response.xpath("//ul[@class='conference__proceedings__container']/li/div[@class='conference__title left-bordered-title']/a/text()").extract()
-        proceeding_years = [pro.split(" '")[1][:2] for pro in proceeding_titles]
-        proceeding_years = ["MM20" + year if year[0] !='9' else "MM19" + year for year in proceeding_years ]
-        proceeding_dicts = {year: url for year, url in zip(proceeding_years, proceeding_urls)}
-
-        for conf in self.wanted_conf:
-            if conf not in proceeding_dicts:
-                continue
-            url = self.base_url + proceeding_dicts[conf]
-            meta = {"conf": conf}
-            yield scrapy.Request(url, callback=self.parse_session_list, meta=meta)
-
-    def parse_session_list(self, response):
-        meta = {"conf": response.meta['conf']}
-        session_list = response.xpath("//div[@class='accordion sections']/div[@class='accordion-tabbed rlist']/div/a/@href").extract()
-
-        for session in session_list:
-            doi = re.search(pattern=r'10(.+?)\?', string=session)[0][:-1]
-            tocHeading = session.split("=")[1]
-            url = "https://dl.acm.org/pb/widgets/lazyLoadTOC?tocHeading={}&widgetId=f51662a0-fd51-4938-ac5d-969f0bca0843&doi={}&pbContext=;" \
-                  "article:article:doi\:{};" \
-                  "taxonomy:taxonomy:conference-collections;" \
-                  "topic:topic:conference-collections>mm;" \
-                  "wgroup:string:ACM Publication Websites;" \
-                  "groupTopic:topic:acm-pubtype>proceeding;" \
-                  "csubtype:string:Conference Proceedings;" \
-                  "page:string:Book Page;" \
-                  "website:website:dl-site;" \
-                  "ctype:string:Book Content;journal:journal:acmconferences;" \
-                  "pageGroup:string:Publication Pages;" \
-                  "issue:issue:doi\:{}".format(tocHeading, doi, doi, doi)
-
-            yield scrapy.Request(url, callback=self.parse_paper_list, meta=meta)
-
-    def parse_paper_list(self, response):
-        meta = {"conf": response.meta['conf']}
-        doi_list = response.xpath("//div[@class='issue-item clearfix']/div/div/h5/a/@href").extract()
-
-        for doi in doi_list:
-            url = self.base_url + doi
-            yield scrapy.Request(url, callback=self.parse_paper, meta=meta)
-
-    @staticmethod
-    def extract_data(response):
-
-        title = response.xpath("//div[@class='article-citations']/div[@class='citation']/div[@class='border-bottom clearfix']/h1/text()").get()
-
-        authors = inspect.cleandoc(",".join(response.xpath(
-            "//div[@class='article-citations']/div[@class='citation']/div[@class='border-bottom clearfix']/div[@id='sb-1']/ul/li[@class='loa__item']/a/@title").extract()))
-
-        abstract = inspect.cleandoc(response.xpath("//div[@class='abstractSection abstractInFull']/p/text()").get())
-
-        pdf_url = response.xpath("//div[@class='article-citations']//a[@title='PDF']/@href").get()
-
-        return title, pdf_url, authors, abstract
-
-class KddScrapySpider(MmScrapySpider):
-    name = 'kdd'
-
-    start_urls = [
-        "https://dl.acm.org/conference/kdd/proceedings",
-    ]
-    base_url = "https://dl.acm.org"
-
-    def parse(self, response):
-        proceeding_urls = response.xpath("//ul[@class='conference__proceedings__container']/li[@class='conference__proceedings']/div[@class='conference__title left-bordered-title']/a/@href").extract()
-        proceeding_titles = response.xpath("//ul[@class='conference__proceedings__container']/li[@class='conference__proceedings']/div[@class='conference__title left-bordered-title']/a/text()").extract()
-        proceeding_years = [pro.split(" '")[1][:2] for pro in proceeding_titles]
-        proceeding_years = ["KDD20" + year if year[0] !='9' else "KDD19" + year for year in proceeding_years ]
-        proceeding_dicts = {year: url for year, url in zip(proceeding_years, proceeding_urls)}
-
-        for conf in self.wanted_conf:
-            if conf not in proceeding_dicts:
-                continue
-            url = self.base_url + proceeding_dicts[conf]
-            meta = {"conf": conf}
-            yield scrapy.Request(url, callback=self.parse_session_list, meta=meta)
-
-
-    def parse_paper_list(self, response):
-        meta = {"conf": response.meta['conf']}
-        doi_list = response.xpath("//div[@class='issue-item clearfix']/div/div/h5/a/@href").extract()
-
-        for doi in doi_list:
-            url = self.base_url + doi
-            yield scrapy.Request(url, callback=self.parse_paper, meta=meta)
-
-    def parse(self, response):
-
-        proceeding_urls = response.xpath("//li[@class='conference__proceedings']/div[@class='conference__title left-bordered-title']/a[contains(string(), ': Proceedings of') and not(contains(text(), 'Companion:')) and not(contains(text(), 'Special interest tracks and posters')) and not(contains(text(), 'Alt')) and not(contains(text(), 'WWW4')) ]/@href").extract()
-        proceeding_titles = response.xpath("//li[@class='conference__proceedings']/div[@class='conference__title left-bordered-title']/a[contains(string(), ': Proceedings of') and not(contains(text(), 'Companion:')) and not(contains(text(), 'Special interest tracks and posters')) and not(contains(text(), 'Alt')) and not(contains(text(), 'WWW4'))]/text()").extract()
-        proceeding_years = [pro.split(" '")[1][:2] for pro in proceeding_titles]
-        proceeding_years = ["WWW20" + year if year[0] !='9' else "WWW19" + year for year in proceeding_years ]
-        proceeding_dicts = {year: url for year, url in zip(proceeding_years, proceeding_urls)}
-
-        for conf in self.wanted_conf:
-            if conf not in proceeding_dicts:
-                continue
-            url = self.base_url + proceeding_dicts[conf]
-            meta = {"conf": conf}
-            yield scrapy.Request(url, callback=self.parse_session_list, meta=meta)
-
-
-    def parse_paper_list(self, response):
-        meta = {"conf": response.meta['conf']}
-        doi_list = response.xpath("//div[@class='issue-item clearfix']/div/div/h5/a/@href").extract()
-
-        for doi in doi_list:
-            url = self.base_url + doi
-            yield scrapy.Request(url, callback=self.parse_paper, meta=meta)
 
 
 class AclScrapySpider(BaseSpider):
@@ -743,6 +624,13 @@ class WwwScrapySpider(DblpScrapySpider):
 
     start_urls = [
         "https://dblp.org/db/conf/www/index.html",
+    ]
+
+class KddScrapySpider(DblpScrapySpider):
+    name = 'kdd'
+
+    start_urls = [
+        "https://dblp.org/db/conf/kdd/index.html",
     ]
 
 class AaaiScrapySpider(DblpScrapySpider):
