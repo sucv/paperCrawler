@@ -591,15 +591,6 @@ class KddScrapySpider(MmScrapySpider):
             url = self.base_url + doi
             yield scrapy.Request(url, callback=self.parse_paper, meta=meta)
 
-
-class WwwScrapySpider(MmScrapySpider):
-    name = 'www'
-
-    start_urls = [
-        "https://dl.acm.org/conference/www/proceedings",
-    ]
-    base_url = "https://dl.acm.org"
-
     def parse(self, response):
 
         proceeding_urls = response.xpath("//li[@class='conference__proceedings']/div[@class='conference__title left-bordered-title']/a[contains(string(), ': Proceedings of') and not(contains(text(), 'Companion:')) and not(contains(text(), 'Special interest tracks and posters')) and not(contains(text(), 'Alt')) and not(contains(text(), 'WWW4')) ]/@href").extract()
@@ -682,68 +673,64 @@ class NaaclScrapySpider(AclScrapySpider):
 
     base_url = "https://aclanthology.org"
 
+
 class DblpScrapySpider(BaseSpider):
-
     def parse(self, response):
-        href_pattern = r'href="([^"]+)"'
-        year_pattern = r'\b\d{4}\b'
-        year_html_list = response.xpath("//div[@id='info-section']/following-sibling::ul/li")
-
-        year_dict = {}
-        for year_html in year_html_list:
-            volumn_list = re.findall(href_pattern, year_html.get())
-            year = re.findall(year_pattern, year_html.get())[0]
-            year_dict[year] = volumn_list
-
-        for conf in self.wanted_conf:
-            if conf[-4:] not in year_dict:
-                continue
-
-            meta = {"conf": conf}
-            urls = year_dict[conf[-4:]]
-            for url in urls:
+        # If "conf" is in the URL, use the conference-specific parsing logic.
+        if "conf" in response.url.lower():
+            # Conference page parsing logic (from DblpConfScrapySpider)
+            year_lst = response.xpath("//header[@class='h2']/h2/@id").extract()
+            year_content = response.xpath("//ul[@class='publ-list']/li[1]//a[@class='toc-link']/@href").extract()
+            year_dict = dict(zip(year_lst, year_content))
+            for conf in self.wanted_conf:
+                # The last 4 characters of conf represent the year.
+                if conf[-4:] not in year_dict:
+                    continue
+                meta = {"conf": conf}
+                url = year_dict[conf[-4:]]
                 yield scrapy.Request(url, callback=self.parse_paper_list, meta=meta)
+        else:
+            # Regular parsing logic (from the original DblpScrapySpider)
+            href_pattern = r'href="([^"]+)"'
+            year_pattern = r'\b\d{4}\b'
+            year_html_list = response.xpath("//div[@id='info-section']/following-sibling::ul/li")
+            year_dict = {}
+            for year_html in year_html_list:
+                volumn_list = re.findall(href_pattern, year_html.get())
+                year_matches = re.findall(year_pattern, year_html.get())
+                if not year_matches:
+                    continue
+                year = year_matches[0]
+                year_dict[year] = volumn_list
+            for conf in self.wanted_conf:
+                if conf[-4:] not in year_dict:
+                    continue
+                meta = {"conf": conf}
+                urls = year_dict[conf[-4:]]
+                for url in urls:
+                    yield scrapy.Request(url, callback=self.parse_paper_list, meta=meta)
 
     def parse_paper_list(self, response):
-
         numbers = response.xpath("//div[@id='main']//ul[@class='publ-list']")
-
         for number in numbers:
             titles = number.xpath(".//cite[@class='data tts-content']//span[@class='title']/text()").extract()
             for i, title in enumerate(titles):
-
-                authors = ",".join(number.xpath(".//cite[@class='data tts-content']")[i].xpath(".//span[@itemprop='author']/a//text()").extract())
-                # Deliver the scraped item to `pipelines.py`.
-
+                # Retrieve authors corresponding to the title.
+                authors = ",".join(
+                    number.xpath(".//cite[@class='data tts-content']")[i]
+                          .xpath(".//span[@itemprop='author']/a//text()")
+                          .extract()
+                )
                 paper = Paper()
                 paper["conf"] = response.meta['conf']
                 paper["title"] = title
                 paper["authors"] = authors
                 paper["pdf_url"] = ""
                 paper["abstract"] = ""
-
                 yield paper
 
 
-class DblpConfScrapySpider(DblpScrapySpider):
-
-    def parse(self, response):
-        year_lst = response.xpath("//header[@class='h2']/h2/@id").extract()
-        year_content = response.xpath("//ul[@class='publ-list']/li[1]//a[@class='toc-link']/@href").extract()
-
-        year_dict = dict(zip(year_lst, year_content))
-
-        for conf in self.wanted_conf:
-            if conf[-4:] not in year_dict:
-                continue
-
-            meta = {"conf": conf}
-            url = year_dict[conf[-4:]]
-
-            yield scrapy.Request(url, callback=self.parse_paper_list, meta=meta)
-
-
-class MultimediaScrapySpider(DblpConfScrapySpider):
+class MultimediaScrapySpider(DblpScrapySpider):
     name = 'mm'
 
     start_urls = [
@@ -751,21 +738,21 @@ class MultimediaScrapySpider(DblpConfScrapySpider):
     ]
 
 
-class WwwScrapySpider(DblpConfScrapySpider):
+class WwwScrapySpider(DblpScrapySpider):
     name = 'www'
 
     start_urls = [
         "https://dblp.org/db/conf/www/index.html",
     ]
 
-class AaaiScrapySpider(DblpConfScrapySpider):
+class AaaiScrapySpider(DblpScrapySpider):
     name = 'aaai'
     start_urls = [
         "https://dblp.org/db/conf/aaai/index.html",
     ]
 
 
-class IcasspScrapySpider(DblpConfScrapySpider):
+class IcasspScrapySpider(DblpScrapySpider):
     name = 'icassp'
 
     start_urls = [
@@ -828,5 +815,8 @@ class TspScrapySpider(DblpScrapySpider):
     start_urls = [
         "https://dblp.org/db/journals/tsp/index.html",
     ]
+
+
+
 
 

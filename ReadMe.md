@@ -99,10 +99,11 @@ python main.py -years 2021,2022,2023 -queries "emo* and (visual or audio or spee
 
 [dblp](https://dblp.org/) provides consistent HTML structures, making it easy to add custom spiders for publishers. You can quickly create a spider for any conference or journal. DBLP provides useful information such as citation count and paper categories. Though the abstract is not available from DBLP, the spider will try to salvage by investigating whether the paper is available on Arxiv and fetch the abstract if available.
 
-### Adding a Journal Spider
+### Adding a Spider
 
 In `spiders.py`, add the following code:
 
+A spider for a journal or conference, e.g., TPAMI
 ```python
 class TpamiScrapySpider(DblpScrapySpider):
     name = "tpami"
@@ -112,14 +113,14 @@ class TpamiScrapySpider(DblpScrapySpider):
     ]
 ```
 
-### Adding a Conference Spider
-
+A spider for multiple vanues (e.g., Nature and Journal of ACM), please refer to DBLP itself or `venues.py`and manually add choose yours.
 ```python
-class InterspeechScrapySpider(DblpConfScrapySpider):
-    name = 'icassp'
+class ExtraScrapySpider(DblpScrapySpider):
+    name = 'extra'
 
     start_urls = [
-        "https://dblp.org/db/conf/icassp/index.html",
+        "https://dblp.org/db/journals/nature/index.html",
+        "https://dblp.org/db/journals/jacm",
     ]
 ```
 
@@ -141,6 +142,8 @@ Simply inherit from `DblpScrapySpider` or `DblpConfScrapySpider`, set `name=`, a
 + 13-MAR-2024
   + Fixed a bug so that the pdfs can be downloaded to `pdf_dir`.
   + Fixed a bug in which duplicated pdf urls could be saved.
+  + Merged the `DblpScrapySpider` and `DblpConfScrapySpider` as one.
+  + Added the top venues from DBLP for CS. 
 + 12-MAR-2024
   + Improved the `pipeline.py`so that when CrossRef API says the paper is open-accessed, it will not only accumulate all the OA pdf url, but also examine whether the url is from Arxiv. If so, it will further request the abstract from Arxiv API. Since there is a great number of paper being open-accessed, doing so may largely salvage the records from DBLP that do not come with such information.
   + Added `download_pdf`as the citation count threshold for downloading a paper. Only if a paper's citation count is greater than or eqal to the threshold, would the paper be downloaded.
