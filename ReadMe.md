@@ -113,7 +113,7 @@ class TpamiScrapySpider(DblpScrapySpider):
     ]
 ```
 
-A spider for multiple vanues (e.g., Nature and Journal of ACM), please refer to DBLP itself or `venues.py`and manually add choose yours.
+A spider for multiple vanues (e.g., Nature and Journal of ACM), please refer to DBLP itself or `venues.py`and manually added your interested venues into `start_urls`.
 ```python
 class ExtraScrapySpider(DblpScrapySpider):
     name = 'extra'
@@ -126,7 +126,7 @@ class ExtraScrapySpider(DblpScrapySpider):
 
 ### Explanation
 
-Simply inherit from `DblpScrapySpider` or `DblpConfScrapySpider`, set `name=`, and provide `start_urls` pointing to the DBLP homepage of the conference/journal. The rest is handled automatically. Later, you can use the specified `name` to crawl paper information.
+Simply inherit from `DblpScrapySpider`, set `name=`, and provide `start_urls` pointing to your interested DBLP homepage. The rest is handled automatically. Later, you can use the specified `name` to crawl paper information.
 
 ## Supported Arguments
 
