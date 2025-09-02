@@ -8,7 +8,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Hello PhD life!')
     parser.add_argument('-confs', default="cvpr,iccv,eccv,aaai,ijcai,nips,iclr,icml,mm,kdd,www,acl,emnlp,naacl,tpami,nmi,pnas,ijcv,if,tip,taffc,interspeech,icassp,tsp", type=str,
-                        help='What years you want to crawl?')
+                        help='What conferences you want to crawl?')
     parser.add_argument('-years', default="2016,2017,2018,2019,2020,2021,2022,2023,2024,2025", type=str, help='What years you want to crawl?')
     parser.add_argument('-queries', default="relation, relationship,correlate,correlation", type=str, help='What keywords you want to query?')
     parser.add_argument('-out', default="./downloads/output.csv", type=str, help='Specify the output path as /path/to/filename.csv')
