@@ -74,9 +74,9 @@ First, navigate to the directory where `main.py` is located. During crawling, a 
 
 ### Example Commands
 
-#### Get ALL papers from CVPR, ICCV, and ECCV (2021-2023) and save output to `myresearch/all.csv`, also download papers whose citation count is no smaller than 50
+#### Get ALL papers from all venues (2024-2026) and save output to `myresearch/all.csv`, also download papers whose citation count is no smaller than 50
 ```shell
-python main.py -confs cvpr,iccv,eccv -years 2021,2022,2023 -queries "*" -out "myresearch/all.csv" -download_pdf 50
+python main.py  -years 2026,2025,2024 -queries "*" -out "myresearch/all.csv" -download_pdf 50
 ```
 
 #### Query papers with titles containing `emotion recognition`, `facial expression`, or `multimodal` without downloading paper
