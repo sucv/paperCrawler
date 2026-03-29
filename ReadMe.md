@@ -18,7 +18,7 @@
 
 This is a [Scrapy](https://docs.scrapy.org/en/latest/intro/tutorial.html)-based crawler. The crawler scrapes accepted papers from top conferences and journals, including:
 
-> &ast; The official sites of these publishers either do not have a consistent HTML structure or block spiders. The spider will attempt to query the title from CrossRef, the abstract could be fetched once the corresponding paper is open-accessed and being hosted on Arxiv. 
+> &ast; The official sites of these publishers either do not have a consistent HTML structure or block spiders. The spider will attempt to query the title from dblp, the abstract could be fetched once the corresponding paper is open-accessed and being hosted on Arxiv. 
 
 ### Supported Conferences
 
@@ -27,13 +27,13 @@ This is a [Scrapy](https://docs.scrapy.org/en/latest/intro/tutorial.html)-based 
 | CVPR        | ✅    | 2013  |
 | ECCV        | ✅    | 2018  |
 | ICCV        | ✅    | 2013  |
-| NIPS        | ✅    | 1987  |
-| ICLR        | ✅    | 2016  |
-| ICML        | ✅    | 2015  |
-| AAAI*       | ✅    | 1980  |
+| NIPS        | ✅    | 2021  |
+| ICLR        | ✅    | 2017  |
+| ICML        | ✅    | 2023  |
+| AAAI        | ✅    | 2017  |
 | IJCAI       | ✅    | 2017  |
 | ACM MM*     | ✅    | 1993  |
-| KDD         | ✅    | 2015  |
+| KDD*        | ✅    | 2015  |
 | WWW*        | ✅    | 1994  |
 | ACL         | ✅    | 2013  |
 | EMNLP       | ✅    | 2013  |
@@ -74,9 +74,9 @@ First, navigate to the directory where `main.py` is located. During crawling, a 
 
 ### Example Commands
 
-#### Get all papers from CVPR, ICCV, and ECCV (2021-2023) and save output to `myresearch/all.csv`, also download papers whose citation count is no smaller than 50
+#### Get ALL papers from CVPR, ICCV, and ECCV (2021-2023) and save output to `myresearch/all.csv`, also download papers whose citation count is no smaller than 50
 ```shell
-python main.py -confs cvpr,iccv,eccv -years 2021,2022,2023 -queries "" -out "myresearch/all.csv" -download_pdf 50
+python main.py -confs cvpr,iccv,eccv -years 2021,2022,2023 -queries "*" -out "myresearch/all.csv" -download_pdf 50
 ```
 
 #### Query papers with titles containing `emotion recognition`, `facial expression`, or `multimodal` without downloading paper
@@ -90,7 +90,7 @@ python main.py -confs cvpr,iccv,eccv -years 2021,2022,2023 -queries "(emotion re
 python main.py -confs cvpr,iccv,eccv -years 2021,2022,2023 -queries "emo* and (visual or audio or speech)" 
 ```
 
-#### Query papers from all the sources for Year 2021-2023 whose citation count is no smaller than 50
+#### Query papers from all the venues for Year 2021-2023 whose citation count is no smaller than 50
 ```shell
 python main.py -years 2021,2022,2023 -queries "emo* and (visual or audio or speech)" -download_pdf 50
 ```
@@ -113,20 +113,20 @@ class TpamiScrapySpider(DblpScrapySpider):
     ]
 ```
 
-A spider for multiple vanues (e.g., Nature and Journal of ACM), please refer to DBLP itself or `venues.py`and manually added your interested venues into `start_urls`.
+A spider for multiple vanues, please refer to DBLP itself or `venues.py`and manually added your interested venues into `start_urls`.
 ```python
 class ExtraScrapySpider(DblpScrapySpider):
     name = 'extra'
 
     start_urls = [
-        "https://dblp.org/db/journals/nature/index.html",
-        "https://dblp.org/db/journals/jacm",
+        "https://dblp.org/db/journals/tog/index.html",
+        "https://dblp.org/db/journals/jacm/index.html",
     ]
 ```
 
 ### Explanation
 
-Simply inherit from `DblpScrapySpider`, set `name=`, and provide `start_urls` pointing to your interested DBLP homepage. The rest is handled automatically. Later, you can use the specified `name` to crawl paper information.
+Simply inherit from `DblpScrapySpider`, set `name=`, and provide `start_urls` pointing to your interested DBLP homepage. That's all. To call the new spider, simply put the `name` following the args `-confs`. 
 
 ## Supported Arguments
 
@@ -139,6 +139,8 @@ Simply inherit from `DblpScrapySpider`, set `name=`, and provide `start_urls` po
 
 ## Change Log
 
++ 29-MAR-2026
+  + Fixed multiple venues that were outdated.
 + 13-MAR-2024
   + Fixed a bug so that the pdfs can be downloaded to `pdf_dir`.
   + Fixed a bug in which duplicated pdf urls could be saved.

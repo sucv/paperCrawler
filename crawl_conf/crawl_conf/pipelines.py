@@ -223,19 +223,19 @@ class CrawlPipeline:
     rate_limit_lock = threading.Lock()
     last_request_time = 0
     COOLDOWN_SECONDS = 1  # Wait 1s between external requests
-
+    parser = BooleanSearchParser()  # Assuming this is defined elsewhere
     def process_item(self, item, spider):
-        parser = BooleanSearchParser()  # Assuming this is defined elsewhere
+        
         abstract = item.get("abstract", "")
         title = item.get("title", "")
         clean_title = re.sub(r'\W+', ' ', title).lower()
 
         # Parse queries
-        if spider.queries == "":
+        if spider.queries == "*":
             found = True
             matched_tokens = set()
         else:
-            found, matched_tokens = parser.match_with_tokens(text=clean_title, expr=spider.queries)
+            found, matched_tokens = self.parser.match_with_tokens(text=clean_title, expr=spider.queries)
 
         if not found:
             raise DropItem("Missing keyword in %s" % item)
@@ -340,7 +340,7 @@ class CrawlPipeline:
             for pdf_url in pdf_urls:
 
                 if is_downloaded:
-                    continue
+                    break
 
                 response = requests.get(pdf_url)
                 if response.status_code == 200:
@@ -349,4 +349,5 @@ class CrawlPipeline:
                     with open(pdf_path, "wb") as file:
                         file.write(response.content)
 
+                    is_downloaded = True
         return item

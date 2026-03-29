@@ -1,5 +1,7 @@
 import scrapy
 import re
+import json
+from urllib.parse import quote
 
 # To remove consecutive space and special formatting characters like \n
 import inspect
@@ -7,7 +9,6 @@ import inspect
 # We import the Paper item we defined in `items.py`.
 from ..items import Paper
 
-import json
 
 class BaseSpider(scrapy.Spider):
 
@@ -30,8 +31,10 @@ class BaseSpider(scrapy.Spider):
         self.queries = queries
 
         # If not call Crossref API
+        self.crossref = False
         if not nocrossref:
             self.crossref = True
+
 
     def parse(self, response):
         raise NotImplementedError
@@ -161,38 +164,36 @@ class EccvScrapySpider(CvprScrapySpider):
                 yield scrapy.Request(url, callback=self.parse_paper, meta=meta)
 
 
-class NipsScrapySpider(BaseSpider):
-    name = 'nips'
+class AaaiScrapySpider(BaseSpider):
+    name = 'aaai'
     start_urls = [
-        "https://papers.nips.cc/",
+        "https://aaai.org/aaai-publications/aaai-conference-proceedings/",
     ]
 
     def parse(self, response):
 
         for conf in self.wanted_conf:
-            conf_url = "/paper/" + conf[4:]
-            year = conf[4:]
-            url = response.urljoin(conf_url)
             meta = {"conf": conf}
+            year = conf[4:].lower()
+            url = response.xpath(f"//p[contains(@class, 'link-block')]/a[contains(text(), '{year}')]/@href").get()
+            yield scrapy.Request(url, callback=self.parse_track_list, meta=meta)
 
-            if year == "2023":
-                url = response.urljoin("https://nips.cc" + "/Conferences/" + conf[4:] + "/Schedule")
-                yield scrapy.Request(url, callback=self.parse_paper_list_for_openreview, meta=meta)
-            else:
-                yield scrapy.Request(url, callback=self.parse_paper_list, meta=meta)
-
-    def parse_paper_list_for_openreview(self, response):
+    def parse_track_list(self, response):
         meta = {"conf": response.meta['conf']}
-        paper_id_list = response.xpath(
-            "//div[@id='base-main-content']/div[2]/div[3 < position()]/div[@class='maincard narrower poster']/@id").extract()
+        paper_url_list = response.xpath("//main[@id='genesis-content']//*[self::li or self::p]/a/@href").getall()
 
-        for paper_id in paper_id_list:
-            url = response.url + "?showEvent=" + paper_id.split("_")[1]
+        for paper_url in paper_url_list:
+            url = response.urljoin(paper_url)
+            yield scrapy.Request(url, callback=self.parse_paper_list, meta=meta)
 
-            yield scrapy.Request(url, callback=self.parse_paper, meta=meta)
     def parse_paper_list(self, response):
         meta = {"conf": response.meta['conf']}
-        paper_url_list = response.xpath("//div[@class='container-fluid']/div[@class='col']/ul/li/a/@href").extract()
+
+        paper_url_list = (
+            response.xpath("//ul[@class='cmp_article_list articles']/li//h3[@class='title']/a/@href").getall()
+            or
+            response.xpath("//div[@class='track-wrap']/ul/li//h5/a/@href").getall()
+        )
 
         for paper_url in paper_url_list:
             url = response.urljoin(paper_url)
@@ -201,75 +202,21 @@ class NipsScrapySpider(BaseSpider):
     @staticmethod
     def extract_data(response):
 
-        if response.meta['conf'] == "NIPS2023":
-            title = inspect.cleandoc(
-                response.xpath("//div[@id='base-main-content']/div[2]/div[@id=$pid]/div[@class='maincardBody']/text()",
-                               pid="maincard_" + response.url.split("=")[1]).get())
-            authors = inspect.cleandoc(
-                ",".join(response.xpath("//div[@id='base-main-content']/div[2]/button/text()").extract())).replace("»",
-                                                                                                                   "")
-            abstract = inspect.cleandoc(response.xpath(
-                "//div[@class='abstractContainer']/p/text() | //div[@class='abstractContainer']/text() | //div[@class='abstractContainer']/span/text()").get())
+        title = inspect.cleandoc(response.xpath("//h1[@class='page_title']/text()").get() or response.xpath("//h1[@class='entry-title']/text()").get())
+        authors = (
+            response.xpath("//section[@class='item authors']/ul/li/span[@class='name']/text()").getall()
+            or
+            response.xpath("//div[@class='author-output']/p[@class='bold']/text()").getall()
+        )
 
-            paper_id = response.xpath("//div[@class='maincard narrower poster']/@id").get()
+        abstract = (response.xpath("//section[@class='item abstract']/text()").getall() or response.xpath("//div[@class='paper-section-wrap'][h4[text()='Abstract:']]/div[@class='attribute-output']/p/text()").get())
+        if not isinstance(abstract, list):
+            abstract = [abstract]
+        abstract = " ".join([text.strip() for text in abstract])
 
-            pdf_openreview_url = response.xpath(
-                "//div[@id=$pid]//a[contains(string(), 'OpenReview') or contains(string(), 'Paper')]/@href",
-                pid=paper_id).get()
-            pdf_url = pdf_openreview_url.replace("forum", "pdf")
-
-        else:
-            title = inspect.cleandoc(response.xpath("//div[@class='col']/h4/text()").get())
-
-            authors = inspect.cleandoc(response.xpath("//div[@class='col']/p[position()=2]/i/text()").get())
-
-            try:
-                abstract = inspect.cleandoc(response.xpath("//div[@class='col']/p[position()=4]/text()").get())
-            except:
-                abstract = inspect.cleandoc(response.xpath(
-                    "//div[@class='col']/p[position()=3]/text() | //div[@class='col']/p[position()=3]/span/text()").get())
-
-            pdf_url = response.urljoin(response.xpath("//div[@class='col']/div/a[text()='Paper']/@href").get())
+        pdf_url = (response.xpath("//a[contains(@class, 'obj_galley_link pdf')]/@href").get() or response.xpath("//div[@class='pdf-button']/a/@href").get())
 
         return title, pdf_url, authors, abstract
-
-
-# class AaaiScrapySpider(BaseSpider):
-#     name = 'aaai'
-#     start_urls = [
-#         "https://aaai.org/aaai-publications/aaai-conference-proceedings/",
-#     ]
-#
-#     def parse(self, response):
-#
-#         for conf in self.wanted_conf:
-#             meta = {"conf": conf}
-#             year = conf[4:].lower()
-#             url = response.xpath(f"//p[contains(@class, 'link-block')]/a[contains(text(), '{year}')]/@href").get()
-#             yield scrapy.Request(url, callback=self.parse_track_list, meta=meta)
-#
-#     def parse_track_list(self, response):
-#         meta = {"conf": response.meta['conf']}
-#         paper_url_list = response.xpath("//ul[@class='cmp_article_list articles']/li//h3[@class='title']/a/@href").extract()
-#
-#         for paper_url in paper_url_list:
-#             url = response.urljoin(paper_url)
-#             yield scrapy.Request(url, callback=self.parse_paper, meta=meta)
-#
-#
-#     @staticmethod
-#     def extract_data(response):
-#
-#         title = inspect.cleandoc(response.xpath("//article[contains(@class, 'obj_article_details')]/h1[@class='page_title']/text()").get())
-#         authors = response.xpath("//ul[@class='authors']/li/span[@class='name']/text()").getall()
-#         authors = ",".join([author.strip() for author in authors])
-#
-#         abstract = response.xpath("//section[@class='item abstract']/text()").getall()
-#         abstract = " ".join([text.strip() for text in abstract])
-#
-#         pdf_url = response.xpath("//a[contains(@class, 'obj_galley_link pdf')]/@href").get()
-#
-#         return title, pdf_url, authors, abstract
 
 
 class IjcaiScrapySpider(BaseSpider):
@@ -285,7 +232,7 @@ class IjcaiScrapySpider(BaseSpider):
 
     def parse_paper_list(self, response):
         meta = {"conf": response.meta['conf']}
-        paper_url_list = response.xpath("//div[@class='paper_wrapper']/div[@class='details']/a[2]/@href").extract()
+        paper_url_list = response.xpath("//div[@class='details']/a[2]/@href").extract()
 
         for paper_url in paper_url_list:
             url = response.urljoin(paper_url)
@@ -348,6 +295,16 @@ class IclrScrapySpider(BaseSpider):
     def parse(self, response):
 
         GET_dict = {
+            "2026":{
+                "GET": "https://api2.openreview.net/notes?content.venue=ICLR 2026 {session}&details=replyCount,presentation,writable&domain=ICLR.cc/2026/Conference&invitation=ICLR.cc/2026/Conference/-/Submission&limit=1000&offset={offset}",
+                "sessions": ["Oral", "ConditionalOral", "Poster", "ConditionalPoster", "Spotlight"],
+                "total_paper": 6000
+            },
+            "2025": {
+                "GET": "https://api2.openreview.net/notes?content.venue=ICLR 2025 {session}&details=replyCount,presentation&domain=ICLR.cc/2025/Conference&limit=1000&offset={offset}",
+                "sessions": ["Oral", "Spotlight", "Poster"],
+                "total_paper": 4000
+            },
             "2024": {
                 "GET": "https://api2.openreview.net/notes?content.venue=ICLR 2024 {session}&details=replyCount,presentation&domain=ICLR.cc/2024/Conference&limit=1000&offset={offset}",
                 "sessions": ["oral", "spotlight", "poster"],
@@ -455,45 +412,136 @@ class IclrScrapySpider(BaseSpider):
         return title, pdf_url, authors, abstract
 
 
-class IcmlScrapySpider(BaseSpider):
-    name = 'icml'
+class NipsScrapySpider(IclrScrapySpider):
+    name = 'nips'
     start_urls = [
-        "https://icml.cc/Downloads",
+        "https://openreview.net/group?id=NeurIPS.cc&referrer=%5BHomepage%5D(%2F)",
     ]
 
     def parse(self, response):
+
+        GET_dict = {
+            "2025": {
+                "GET": "https://api2.openreview.net/notes?content.venue={venue}&details=replyCount,presentation,writable&domain=NeurIPS.cc/2025/Conference&invitation=NeurIPS.cc/2025/Conference/-/Submission&limit=1000&offset={offset}",
+                "sessions": ["oral", "spotlight", "poster"],
+                "total_paper": 6000
+            },
+            "2024": {
+                "GET": "https://api2.openreview.net/notes?content.venue={venue}&details=replyCount,presentation,writable&domain=NeurIPS.cc/2024/Conference&invitation=NeurIPS.cc/2024/Conference/-/Submission&limit=1000&offset={offset}",
+                "sessions": ["oral", "spotlight", "poster"],
+                "total_paper": 6000
+            },
+            "2023": {
+                "GET": "https://api2.openreview.net/notes?content.venue={venue}&details=replyCount,presentation,writable&domain=NeurIPS.cc/2023/Conference&invitation=NeurIPS.cc/2023/Conference/-/Submission&limit=1000&offset={offset}",
+                "sessions": ["oral", "spotlight", "poster"],
+                "total_paper": 4000
+            },
+            "2022": {
+                "GET": "https://api.openreview.net/notes?content.venue={venue}&details=replyCount&offset={offset}&limit=1000&invitation=NeurIPS.cc/2022/Conference/-/Blind_Submission",
+                "sessions": ["Accept"],
+                "total_paper": 3000
+            },
+            "2021": {
+                "GET": "https://api.openreview.net/notes?content.venue={venue}&details=replyCount&offset={offset}&limit=1000&invitation=NeurIPS.cc/2021/Conference/-/Blind_Submission",
+                "sessions": ["Oral", "Spotlight", "Poster"],
+                "total_paper": 3000
+            },
+        }
+
         for conf in self.wanted_conf:
-            meta = {"conf": conf}
-            url = response.urljoin(response.url + "/" + conf[4:])
-            yield scrapy.Request(url, callback=self.parse_paper_list, meta=meta)
+            year = conf[4:]
 
-    def parse_paper_list(self, response):
-        meta = {"conf": response.meta['conf']}
-        paper_href_list = response.xpath("//div[@class='list_html']/ul/li/a/@href").extract()
+            if year not in GET_dict:
+                continue
 
-        for paper_href in paper_href_list:
-            url = response.urljoin("https://icml.cc/" + paper_href)
+            get_request = GET_dict[year]["GET"]
+            sessions = GET_dict[year]["sessions"]
+            total_paper = GET_dict[year]["total_paper"]
+            num_papers = 1000
 
-            yield scrapy.Request(url, callback=self.parse_paper, meta=meta)
+            for session in sessions:
+                offset = 0
+                while offset <= total_paper:
+                    venue = quote(f"NeurIPS {year} {session}")
+                    url = get_request.format(venue=venue, offset=offset)
+                    yield scrapy.Request(url, callback=self.parse_paper_list, meta={"conf": conf})
+                    offset += num_papers
+    
 
     @staticmethod
-    def extract_data(response):
+    def extract_data(item, year):
 
-        paper_type = inspect.cleandoc(response.xpath("//div[@class='card-header']/h3[@class='text-center ']/text()").get())
+        if year <= "2021":
+            title = inspect.cleandoc(item['content']['title'])
+            authors = inspect.cleandoc(",".join(item['content']['authors']))
+            abstract = inspect.cleandoc(item['content']['abstract'])
+            pdf_id = item['content']['pdf']
+        else:
+            title = inspect.cleandoc(item['content']['title']['value'])
+            authors = inspect.cleandoc(",".join(item['content']['authors']['value']))
+            abstract = inspect.cleandoc(item['content']['abstract']['value'])
+            pdf_id = item['content']['pdf']['value']
 
-        if paper_type == "Workshop":
-            return None
 
-        title = inspect.cleandoc(response.xpath("//div[@class='card-header']/h2/text()").get())
-        authors = inspect.cleandoc(response.xpath("//div[@class='card-header']/h2/following-sibling::*[1]/text()").get()).replace(" · ", ",")
-        abstract = inspect.cleandoc(" ".join(response.xpath("//div[@id='abstract_details']//div[@id='abstractExample']//text()").getall()))
-        abstract = re.sub(r"Abstract:\s*\n", "Abstract: ", abstract)
-
-        pdf_url = response.xpath("//a[contains(@class, 'href_Poster') and @title='PDF']/@href").get()
-
+        pdf_url =  "https://openreview.net" + pdf_id
         return title, pdf_url, authors, abstract
 
+class IcmlScrapySpider(IclrScrapySpider):
+    name = 'icml'
+    start_urls = [
+        "https://openreview.net/group?id=ICML.cc/2025",
+    ]
 
+    def parse(self, response):
+
+        GET_dict = {
+            "2025": {
+                "GET": "https://api2.openreview.net/notes?content.venue={venue}&details=replyCount,presentation,writable&domain=ICML.cc/2025/Conference&invitation=ICML.cc/2025/Conference/-/Submission&limit=1000&offset={offset}",
+                "sessions": ["oral", "spotlight", "poster"],
+                "total_paper": 6000
+            },
+            "2024": {
+                "GET": "https://api2.openreview.net/notes?content.venue={venue}&details=replyCount,presentation,writable&domain=ICML.cc/2024/Conference&invitation=ICML.cc/2024/Conference/-/Submission&limit=1000&offset={offset}",
+                "sessions": ["Oral", "Spotlight", "Poster"],
+                "total_paper": 5000
+            },
+            "2023": {
+                "GET": "https://api2.openreview.net/notes?content.venue={venue}&details=replyCount,presentation,writable&domain=ICML.cc/2023/Conference&invitation=ICML.cc/2023/Conference/-/Submission&limit=1000&offset={offset}",
+                "sessions": ["OralPoster", "Poster"],
+                "total_paper": 4000
+            }
+        }
+
+        for conf in self.wanted_conf:
+            year = conf[4:]
+
+            if not year in GET_dict:
+                continue
+
+            get_request = GET_dict[year]["GET"]
+            sessions = GET_dict[year]["sessions"]
+            total_paper = GET_dict[year]["total_paper"]
+            num_papers = 1000
+
+            for session in sessions:
+                offset = 0
+                while offset <= total_paper:
+                    venue = quote(f"ICML {year} {session}")
+                    url = get_request.format(venue=venue, offset=offset)
+                    yield scrapy.Request(url, callback=self.parse_paper_list, meta={"conf": conf})
+                    offset += num_papers
+
+    @staticmethod
+    def extract_data(item, year):
+
+        title = inspect.cleandoc(item['content']['title']['value'])
+        authors = inspect.cleandoc(",".join(item['content']['authors']['value']))
+        abstract = inspect.cleandoc(item['content']['abstract']['value'])
+        pdf_id = item['content']['pdf']['value']
+
+
+        pdf_url =  "https://openreview.net" + pdf_id
+        return title, pdf_url, authors, abstract
 
 
 
@@ -520,7 +568,7 @@ class AclScrapySpider(BaseSpider):
     def parse_paper_list(self, response):
         meta = {"conf": response.meta['conf']}
         paper_urls = response.xpath(
-            "//section[@id='main']//p[contains(@class, 'd-sm-flex align-items-stretch')][position() >= 2]//strong/a/@href").extract()
+            "//section[@id='main']//span[contains(@class, 'd-block')]/strong/a/@href").extract()
 
         for paper_url in paper_urls:
             url = self.base_url + paper_url
@@ -632,13 +680,6 @@ class KddScrapySpider(DblpScrapySpider):
     start_urls = [
         "https://dblp.org/db/conf/kdd/index.html",
     ]
-
-class AaaiScrapySpider(DblpScrapySpider):
-    name = 'aaai'
-    start_urls = [
-        "https://dblp.org/db/conf/aaai/index.html",
-    ]
-
 
 class IcasspScrapySpider(DblpScrapySpider):
     name = 'icassp'

@@ -8,8 +8,8 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Hello PhD life!')
     parser.add_argument('-confs', default="cvpr,iccv,eccv,aaai,ijcai,nips,iclr,icml,mm,kdd,www,acl,emnlp,naacl,tpami,nmi,pnas,ijcv,if,tip,taffc,interspeech,icassp,tsp", type=str,
-                        help='What years you want to crawl?')
-    parser.add_argument('-years', default="2016,2017,2018,2019,2020,2021,2022,2023,2024,2025", type=str, help='What years you want to crawl?')
+                        help='Conferences or journals to crawl, separated by commas.')
+    parser.add_argument('-years', default="2017,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026", type=str, help='What years you want to crawl?')
     parser.add_argument('-queries', default="relation, relationship,correlate,correlation", type=str, help='What keywords you want to query?')
     parser.add_argument('-out', default="./downloads/output.csv", type=str, help='Specify the output path as /path/to/filename.csv')
     parser.add_argument('-download_pdf', type=int, default=-1, help='Citation count threshold to download a paper. Will download a paper if its citation count is greater than or equal to it.')
@@ -39,11 +39,7 @@ if __name__ == "__main__":
 
     # You have set some feed-output settings
     process.settings.set('FEED_FORMAT', 'csv')          # or 'csv', 'xml', etc.
-    process.settings.set('FEED_URI', 'data.csv')        # default output file name
-
-    if args.out is not None:
-        # If user specified an output path, override the default
-        process.settings.set('FEED_URI', out_csv)
+    process.settings.set('FEED_URI', out_csv)
 
 
     # ------------------------------------------------------------
@@ -55,7 +51,7 @@ if __name__ == "__main__":
             years=years,
             queries=queries,
             nocrossref=nocrossref,
-            download_pdf=args.download_pdf,
+            download_pdf=download_pdf,
             pdf_dir = os.path.dirname(out_csv)
         )
 
