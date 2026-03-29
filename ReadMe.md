@@ -74,25 +74,20 @@ First, navigate to the directory where `main.py` is located. During crawling, a 
 
 ### Example Commands
 
-#### Get ALL papers from all venues (2024-2026) and save output to `myresearch/all.csv`, also download papers whose citation count is no smaller than 50
+#### Get ALL papers from all venues (2024-2026) and save output to `myresearch/all.csv`, without downloading any papers
 ```shell
-python main.py  -years 2026,2025,2024 -queries "*" -out "myresearch/all.csv" -download_pdf 50
+python main.py  -years 2026,2025,2024 -queries "*" -out "myresearch/all.csv" 
 ```
 
-#### Query papers with titles containing `emotion recognition`, `facial expression`, or `multimodal` without downloading paper
+#### Query papers with titles containing `emotion recognition`, `facial expression`, or `multimodal`, also download the papers whose citation count is no smaller than 50
 ```shell
-python main.py -confs cvpr,iccv,eccv -years 2021,2022,2023 -queries "(emotion recognition) or (facial expression) or multimodal"
+python main.py -confs cvpr,iccv,eccv -years 2021,2022,2023 -queries "(emotion recognition) or (facial expression) or multimodal" -download_pdf 50
 ```
 > **Note:** More examples for queries with AND, OR, (), wildcard can be found [here](https://github.com/pyparsing/pyparsing/blob/master/examples/booleansearchparser.py#L329C18-L329C18).
 
-#### Query papers with more advanced boolean expressions
+#### Query papers with wildcard boolean expressions
 ```shell
 python main.py -confs cvpr,iccv,eccv -years 2021,2022,2023 -queries "emo* and (visual or audio or speech)" 
-```
-
-#### Query papers from all the venues for Year 2021-2023 whose citation count is no smaller than 50
-```shell
-python main.py -years 2021,2022,2023 -queries "emo* and (visual or audio or speech)" -download_pdf 50
 ```
 
 ## Adding a Custom Spider (Quick & Lazy Solution)
