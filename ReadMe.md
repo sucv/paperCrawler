@@ -12,6 +12,7 @@
   - [Adding a Conference Spider](#adding-a-conference-spider)
   - [Explanation](#explanation)
 - [Supported Arguments](#supported-arguments)
+- [Known Issues](#known-issues)
 - [Change Log](#change-log)
 
 ## Paper Crawler for Top CS/AI/ML/NLP Conferences and Journals
@@ -45,9 +46,17 @@ This is a [Scrapy](https://docs.scrapy.org/en/latest/intro/tutorial.html)-based 
 
 | Journal | Status | Since |
 |---------|--------|-------|
+| NATURE* | ✅    | 2010  |
 | TPAMI*  | ✅    | 1979  |
+| PIEEE*  | ✅    | 1975  |
 | NMI*    | ✅    | 2019  |
 | PNAS*   | ✅    | 1997  |
+| TNNLS*  | ✅    | 2012  |
+| IOTJ*   | ✅    | 2014  |
+| TCOM*   | ✅    | 1972  |
+| CACM*   | ✅    | 1958  |
+| CSUR*   | ✅    | 1969  |
+| TOG*    | ✅    | 1982  |
 | IJCV*   | ✅    | 1987  |
 | IF*     | ✅    | 2014  |
 | TIP*    | ✅    | 1992  |
@@ -126,14 +135,21 @@ Simply inherit from `DblpScrapySpider`, set `name=`, and provide `start_urls` po
 ## Supported Arguments
 
 - `confs`: A list of supported conferences and journals (must be lowercase, separated by commas), which was defined as `name` in each spider. If not specified, all the available publishers will be queried.
-  - Available publisher names so far: `cvpr,iccv,eccv,aaai,ijcai,nips,iclr,icml,mm,kdd,www,acl,emnlp,naacl,tpami,nmi,pnas,ijcv,if,tip,taffc,interspeech,icassp,tsp`. Feel free to add more based on the instruction above.
+  - Available publisher names so far: `cvpr,iccv,eccv,aaai,ijcai,nips,iclr,icml,mm,kdd,www,acl,emnlp,naacl,tpami,nmi,pnas,ijcv,if,tip,taffc,interspeech,icassp,tsp,piee,tnnls,iotj,tcom,cacm,csur,jacm,nature,tog`. Feel free to add more based on the instruction above.
 - `years`: A list of four-digit years (separated by commas). If not specified, will query for recent 10 years (since 2016).
 - `queries`: A case-insensitive query string supporting `()`, `and`, `or`, `not`, and wildcard `*`, based on [pyparsing](https://github.com/pyparsing/pyparsing/blob/master/examples/booleansearchparser.py). See examples [here](https://github.com/pyparsing/pyparsing/blob/master/examples/booleansearchparser.py#L329C18-L329C18).
 - `out`: Specifies the output csv path. `.csv` will be appended if it does not end with ".csv". The pdfs, if to be downloaded, will be saved in the same directory.
 - `download_pdf`: The citation count threshold to decide whether to download a paper. Must be an integer. By default, the value is `-1` which would download nothing.  
 
+## Known Issues
+
+- The citation count use the free-tier OpenAlex API, which usually exceeds limit after around 1K call. As a results, the csv output usually results in `citation_count = -1` after about 1K rows.
+- A publisher site may change HTML or block spiders. If that happens, the corresponding spider would raise the 404 error silently. As far as I know, venues like OpenCVF (CVPR, ICCV, and ECCV), OpenReview (ICLR, ICML, and Neurpis), ACL Anthology (ACL, EMNLP, and NAACL) and DBLP (all custom spiders) are quite consistent. Whereas IEEE (all IEEE transactions), ACM (KDD, MM, and WWW), AAAI, and IJCAI might change their policy or html in a hier frequency.
+
 ## Change Log
 
++ 3-APR-2026
+  + Added a few top-tier journal in the default spiders.
 + 29-MAR-2026
   + Fixed multiple venues that were outdated.
 + 13-MAR-2024

@@ -745,7 +745,65 @@ class TspScrapySpider(DblpScrapySpider):
         "https://dblp.org/db/journals/tsp/index.html",
     ]
 
+class PieeeScrapySpider(DblpScrapySpider):
+    name = "pieee"
 
+    start_urls = [
+        "https://dblp.org/db/journals/pieee/index.html",
+    ]
 
+class TnnlsScrapySpider(DblpScrapySpider):
+    name = "tnnls"
 
+    start_urls = [
+        "https://dblp.org/db/journals/tnn/index.html",
+    ]
 
+class IotjScrapySpider(DblpScrapySpider):
+    name = "iotj"
+
+    start_urls = [
+        "https://dblp.org/db/journals/iotj/index.html",
+    ]
+
+class TcomScrapySpider(DblpScrapySpider):
+    name = "tcom"
+
+    start_urls = [
+        "https://dblp.org/db/journals/tcom/index.html",
+    ]
+
+class CacmScrapySpider(DblpScrapySpider):
+    name = "cacm"
+
+    start_urls = [
+        "https://dblp.org/db/journals/cacm/index.html",
+    ]
+
+class CsurScrapySpider(DblpScrapySpider):
+    name = "csur"
+
+    start_urls = [
+        "https://dblp.org/db/journals/csur/index.html",
+    ]
+
+class JacmScrapySpider(DblpScrapySpider):
+    name = "jacm"
+
+    start_urls = [
+        "https://dblp.org/db/journals/jacm/index.html",
+    ]
+
+class NatureScrapySpider(DblpScrapySpider):
+    name = "nature"
+
+    start_urls = [
+        "https://dblp.org/db/journals/nature/index.html",
+    ]
+
+class TogScrapySpider(DblpScrapySpider):
+    name = "tog"
+
+    start_urls = [
+        "https://dblp.org/db/journals/tog/index.html",
+    ]
