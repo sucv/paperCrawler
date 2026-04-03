@@ -92,6 +92,7 @@ python main.py  -years 2026,2025,2024 -queries "*" -out "myresearch/all.csv"
 ```shell
 python main.py  -years 2026,2025,2024 -queries "*" -out "myresearch/all.csv" --nocrossref
 ```
+The downside is, the spider would hammer the server and got rate limited very soon. In this case, wait for a day, reduce your target venues and years, tweak the `crawl_conf/settings.py` for longer delay, or remove `--nocrossref` as the citation count API call serve as a throttle. 
 
 #### Query papers with titles containing `emotion recognition`, `facial expression`, or `multimodal`, also download the papers whose citation count is no smaller than 50
 ```shell
@@ -148,8 +149,9 @@ Simply inherit from `DblpScrapySpider`, set `name=`, and provide `start_urls` po
 
 ## Known Issues
 
-- The citation count uses the free-tier OpenAlex API, which exceeds limit after around 1K call. As a results, the csv output usually results in `citation_count = -1` after about 1K rows. Therefore, if you intend to crawl all venue with all papers across N years, better add `--nocrossref`, which disables the use of OpenAlex API, and makes it much speedy.
+- The citation count uses the free-tier OpenAlex API, which exceeds limit after around 1K call. As a results, the csv output usually results in `citation_count = -1` after about 1K rows. Therefore, if you intend to crawl all venue with all papers across N years, better add `--nocrossref`, which disables the use of OpenAlex API, and makes it much speedy. However, doing so may result in being rate limited by the server. Therefore, try not crawl all venues and all years with all papers or tweak the `crawl_conf/settings.py` for larger delay and fewer concurrent requests.
 - A publisher site may change HTML or block spiders. If that happens, the corresponding spider would raise the 404 error silently. As far as I know, venues like OpenCVF (CVPR, ICCV, and ECCV), OpenReview (ICLR, ICML, and Neurpis), ACL Anthology (ACL, EMNLP, and NAACL) and DBLP (all custom spiders) are quite consistent. Whereas IEEE (all IEEE transactions), ACM (KDD, MM, and WWW), AAAI, and IJCAI might change their policy or html in a hier frequency.
+
 
 ## Change Log
 
