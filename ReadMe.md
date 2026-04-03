@@ -135,7 +135,7 @@ Simply inherit from `DblpScrapySpider`, set `name=`, and provide `start_urls` po
 ## Supported Arguments
 
 - `confs`: A list of supported conferences and journals (must be lowercase, separated by commas), which was defined as `name` in each spider. If not specified, all the available publishers will be queried.
-  - Available publisher names so far: `cvpr,iccv,eccv,aaai,ijcai,nips,iclr,icml,mm,kdd,www,acl,emnlp,naacl,tpami,nmi,pnas,ijcv,if,tip,taffc,interspeech,icassp,tsp,piee,tnnls,iotj,tcom,cacm,csur,jacm,nature,tog`. Feel free to add more based on the instruction above.
+  - Available publisher names so far: `cvpr,iccv,eccv,aaai,ijcai,nips,iclr,icml,mm,kdd,www,acl,emnlp,naacl,tpami,nmi,pnas,ijcv,if,tip,taffc,interspeech,icassp,tsp,pieee,tnnls,iotj,tcom,cacm,csur,jacm,nature,tog`. Feel free to add more based on the instruction above.
 - `years`: A list of four-digit years (separated by commas). If not specified, will query for recent 10 years (since 2016).
 - `queries`: A case-insensitive query string supporting `()`, `and`, `or`, `not`, and wildcard `*`, based on [pyparsing](https://github.com/pyparsing/pyparsing/blob/master/examples/booleansearchparser.py). See examples [here](https://github.com/pyparsing/pyparsing/blob/master/examples/booleansearchparser.py#L329C18-L329C18).
 - `out`: Specifies the output csv path. `.csv` will be appended if it does not end with ".csv". The pdfs, if to be downloaded, will be saved in the same directory.
@@ -143,7 +143,7 @@ Simply inherit from `DblpScrapySpider`, set `name=`, and provide `start_urls` po
 
 ## Known Issues
 
-- The citation count use the free-tier OpenAlex API, which usually exceeds limit after around 1K call. As a results, the csv output usually results in `citation_count = -1` after about 1K rows.
+- The citation count use the free-tier OpenAlex API, which usually exceeds limit after around 1K call. As a results, the csv output usually results in `citation_count = -1` after about 1K rows. Therefore, if you intend to crawl all venue with all papers across N years, better set `-nocrossref`, which disables the use of OpenAlex API, and makes it much speedy.
 - A publisher site may change HTML or block spiders. If that happens, the corresponding spider would raise the 404 error silently. As far as I know, venues like OpenCVF (CVPR, ICCV, and ECCV), OpenReview (ICLR, ICML, and Neurpis), ACL Anthology (ACL, EMNLP, and NAACL) and DBLP (all custom spiders) are quite consistent. Whereas IEEE (all IEEE transactions), ACM (KDD, MM, and WWW), AAAI, and IJCAI might change their policy or html in a hier frequency.
 
 ## Change Log

@@ -7,7 +7,7 @@ import argparse
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='Hello PhD life!')
-    parser.add_argument('-confs', default="cvpr,iccv,eccv,aaai,ijcai,nips,iclr,icml,mm,kdd,www,acl,emnlp,naacl,tpami,nmi,pnas,ijcv,if,tip,taffc,interspeech,icassp,tsp,piee,tnnls,iotj,tcom,cacm,csur,jacm,nature,tog", type=str,
+    parser.add_argument('-confs', default="cvpr,iccv,eccv,aaai,ijcai,nips,iclr,icml,mm,kdd,www,acl,emnlp,naacl,tpami,nmi,pnas,ijcv,if,tip,taffc,interspeech,icassp,tsp,pieee,tnnls,iotj,tcom,cacm,csur,jacm,nature,tog", type=str,
                         help='Conferences or journals to crawl, separated by commas.')
     parser.add_argument('-years', default="2017,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026", type=str, help='What years you want to crawl?')
     parser.add_argument('-queries', default="relation, relationship,correlate,correlation", type=str, help='What keywords you want to query?')
