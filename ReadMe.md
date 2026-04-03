@@ -88,6 +88,11 @@ First, navigate to the directory where `main.py` is located. During crawling, a 
 python main.py  -years 2026,2025,2024 -queries "*" -out "myresearch/all.csv" 
 ```
 
+#### Disable the citation count and greatly speed things up (when you intend to crawl all venues on all papers across multiple years. See [Known Issues.](#known-issues)).
+```shell
+python main.py  -years 2026,2025,2024 -queries "*" -out "myresearch/all.csv" --nocrossref
+```
+
 #### Query papers with titles containing `emotion recognition`, `facial expression`, or `multimodal`, also download the papers whose citation count is no smaller than 50
 ```shell
 python main.py -confs cvpr,iccv,eccv -years 2021,2022,2023 -queries "(emotion recognition) or (facial expression) or multimodal" -download_pdf 50
@@ -143,7 +148,7 @@ Simply inherit from `DblpScrapySpider`, set `name=`, and provide `start_urls` po
 
 ## Known Issues
 
-- The citation count use the free-tier OpenAlex API, which usually exceeds limit after around 1K call. As a results, the csv output usually results in `citation_count = -1` after about 1K rows. Therefore, if you intend to crawl all venue with all papers across N years, better set `--nocrossref`, which disables the use of OpenAlex API, and makes it much speedy.
+- The citation count uses the free-tier OpenAlex API, which exceeds limit after around 1K call. As a results, the csv output usually results in `citation_count = -1` after about 1K rows. Therefore, if you intend to crawl all venue with all papers across N years, better add `--nocrossref`, which disables the use of OpenAlex API, and makes it much speedy.
 - A publisher site may change HTML or block spiders. If that happens, the corresponding spider would raise the 404 error silently. As far as I know, venues like OpenCVF (CVPR, ICCV, and ECCV), OpenReview (ICLR, ICML, and Neurpis), ACL Anthology (ACL, EMNLP, and NAACL) and DBLP (all custom spiders) are quite consistent. Whereas IEEE (all IEEE transactions), ACM (KDD, MM, and WWW), AAAI, and IJCAI might change their policy or html in a hier frequency.
 
 ## Change Log
