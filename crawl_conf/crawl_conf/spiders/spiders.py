@@ -642,7 +642,8 @@ class DblpScrapySpider(BaseSpider):
     def parse_paper_list(self, response):
         numbers = response.xpath("//div[@id='main']//ul[@class='publ-list']")
         for number in numbers:
-            titles = number.xpath(".//cite[@class='data tts-content']//span[@class='title']/text()").extract()
+            titles = number.xpath(".//cite[@class='data tts-content']//span[@class='title']") \
+               .xpath("string(.)").getall()
             for i, title in enumerate(titles):
                 # Retrieve authors corresponding to the title.
                 authors = ",".join(

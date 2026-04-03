@@ -154,6 +154,7 @@ Simply inherit from `DblpScrapySpider`, set `name=`, and provide `start_urls` po
 ## Change Log
 
 + 3-APR-2026
+  + Fixed a bug for HTML parsing on dblp so that the title string can be obtained when there is `<sup></sup>` included.
   + Added a few top-tier journal in the default spiders.
 + 29-MAR-2026
   + Fixed multiple venues that were outdated.
