@@ -143,7 +143,7 @@ Simply inherit from `DblpScrapySpider`, set `name=`, and provide `start_urls` po
 
 ## Known Issues
 
-- The citation count use the free-tier OpenAlex API, which usually exceeds limit after around 1K call. As a results, the csv output usually results in `citation_count = -1` after about 1K rows. Therefore, if you intend to crawl all venue with all papers across N years, better set `-nocrossref`, which disables the use of OpenAlex API, and makes it much speedy.
+- The citation count use the free-tier OpenAlex API, which usually exceeds limit after around 1K call. As a results, the csv output usually results in `citation_count = -1` after about 1K rows. Therefore, if you intend to crawl all venue with all papers across N years, better set `--nocrossref`, which disables the use of OpenAlex API, and makes it much speedy.
 - A publisher site may change HTML or block spiders. If that happens, the corresponding spider would raise the 404 error silently. As far as I know, venues like OpenCVF (CVPR, ICCV, and ECCV), OpenReview (ICLR, ICML, and Neurpis), ACL Anthology (ACL, EMNLP, and NAACL) and DBLP (all custom spiders) are quite consistent. Whereas IEEE (all IEEE transactions), ACM (KDD, MM, and WWW), AAAI, and IJCAI might change their policy or html in a hier frequency.
 
 ## Change Log
