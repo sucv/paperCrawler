@@ -1,3 +1,7 @@
+## 🚀 🚀 🚀 Update: 
+
+[EasyPaper]() An deep research tool for large-scale literature review and chat-with-paper has been built based on the crawled paper.
+
 ## Table of Contents
 
 - [Paper Crawler for Top CS/AI/ML/NLP Conferences and Journals](#paper-crawler-for-top-csai-mlnlp-conferences-and-journals)
